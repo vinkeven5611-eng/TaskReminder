@@ -1,0 +1,23 @@
+# Environments
+venv/
+env/
+.env
+
+# Node
+node_modules/
+dist/
+build/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+instance/
+.pytest_cache/
+
+# OS specific
+.DS_Store
+Thumbs.db
