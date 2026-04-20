@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://task-reminder-omega-five.vercel.app/sitemap.xml
+Sitemap: https://task-rminder-omega-five.vercel.app/sitemap.xml
