@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: taskreminder-api
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskreminder-db
+          property: connectionString
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+
+databases:
+  - name: taskreminder-db
+    databaseName: taskreminder
+    user: taskadmin
