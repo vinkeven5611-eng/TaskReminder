@@ -21,8 +21,16 @@ load_dotenv()
 app = Flask(__name__)
 # Config
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key-123')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///taskflow.db')
+# Fix for Render/Heroku which may give postgres:// instead of postgresql://
+database_url = os.getenv('DATABASE_URL', 'sqlite:///taskflow.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'jwt-secret-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 
