@@ -496,3 +496,34 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   margin-bottom: 1rem;
 }
 
+/* Responsive Design */
+@media (max-width: 768px) {
+  .task-input-section {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .task-input-section .input-wrapper {
+    width: 100% !important;
+  }
+  
+  .task-input-section button {
+    width: 100%;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .task-card {
+    align-items: flex-start;
+  }
+  
+  .task-actions {
+    opacity: 1;
+    transform: none;
+    margin-top: 0.5rem;
+  }
+}
