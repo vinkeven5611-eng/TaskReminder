@@ -14,6 +14,8 @@
 - 🔐 **Email 2FA 二步驗證**：每次登入需透過信箱驗證碼確認身份，可記住裝置跳過驗證
 - 📊 **即時使用統計**：首頁底部顯示今日活躍用戶數與總註冊人數
 - 🌙 **高端 Dark Glassmorphism UI**：採用毛玻璃效果、環境光、貝茲曲線動畫
+- 🛡️ **進階資安防護**：實作 API 速率限制 (Rate Limiting) 以防禦信件炸彈與暴力破解、嚴格的 CORS 策略，以及防範 IDOR 漏洞的資源隔離檢核
+- ⚡ **自動防休眠機制**：配合外部 Ping 服務與 5 分鐘高頻排程檢查，解決免費雲端平台休眠導致的任務遺漏問題
 
 ---
 
@@ -33,6 +35,7 @@
 | Flask | 3 | REST API 框架 |
 | Flask-JWT-Extended | 4 | JWT 身份驗證 |
 | Flask-Bcrypt | 1 | 密碼加密 |
+| Flask-Limiter | 3 | 速率限制 (Rate Limiting) |
 | APScheduler | 3 | 背景排程任務 |
 | SQLAlchemy | 3 | ORM 資料庫管理 |
 | PostgreSQL / SQLite | - | 資料庫 |
