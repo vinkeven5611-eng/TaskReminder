@@ -26,7 +26,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'jwt-secret-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 
-CORS(app)
+CORS(app, origins=[
+    "http://localhost:5173",
+    "https://task-reminder-omega-five.vercel.app",
+])
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 db.init_app(app)
