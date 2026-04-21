@@ -120,6 +120,14 @@ def to_utc_iso(dt):
     iso = dt.isoformat()
     # 如果原本資料庫儲存的都是沒有時區的 naive datetime (代表 UTC)，補上 Z 給前端
     return iso + 'Z' if not iso.endswith('Z') else iso
+
+def format_tw_time(dt):
+    tw_dt = dt + timedelta(hours=8)
+    ampm = "上午" if tw_dt.hour < 12 else "下午"
+    hour12 = tw_dt.hour % 12
+    if hour12 == 0: hour12 = 12
+    return f"{tw_dt.year}/{tw_dt.month}/{tw_dt.day} {ampm}{hour12:02d}:{tw_dt.minute:02d}"
+
 def check_task_deadlines():
     with app.app_context():
         now = datetime.utcnow()
@@ -140,13 +148,13 @@ def check_task_deadlines():
 
             # 檢查 24 小時提醒 (小於等於 24h 且大於 1h)
             if now <= task.due_date <= upcoming_24h and not task.email_notified_24h:
-                send_reminder_email(user.email, task.content, task.due_date.strftime("%Y-%m-%d %H:%M"), "您的任務即將在 24 小時內到期。")
+                send_reminder_email(user.email, task.content, format_tw_time(task.due_date), "您的任務即將在 24 小時內到期。")
                 task.email_notified_24h = True
                 db.session.commit()
 
             # 檢查 1 小時提醒 (小於等於 1h)
             if now <= task.due_date <= upcoming_1h and not task.email_notified_1h:
-                send_reminder_email(user.email, task.content, task.due_date.strftime("%Y-%m-%d %H:%M"), "⚠️ 您的任務已經不到 1 小時即將到期！")
+                send_reminder_email(user.email, task.content, format_tw_time(task.due_date), "⚠️ 您的任務已經不到 1 小時即將到期！")
                 task.email_notified_1h = True
                 db.session.commit()
 
