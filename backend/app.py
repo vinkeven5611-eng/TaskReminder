@@ -15,6 +15,8 @@ from email.mime.text import MIMEText
 from datetime import timedelta
 import random
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 load_dotenv()
 
@@ -46,6 +48,14 @@ CORS(app,
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 db.init_app(app)
+
+# Rate Limiter：用 IP 識別，預設每分鐘最多 30 次
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per day", "30 per minute"],
+    storage_uri="memory://"
+)
 
 with app.app_context():
     db.create_all()
@@ -187,6 +197,7 @@ def get_stats():
 
 # --- Auth Routes ---
 @app.route('/api/register', methods=['POST'])
+@limiter.limit("3 per minute")  # 同一 IP 每分鐘最多嘗試 3 次
 def register():
     data = request.get_json()
     email = data.get('email')
@@ -211,6 +222,7 @@ def register():
     return jsonify({'status': 'pending_verification'}), 200
 
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("5 per minute")  # 同一 IP 每分鐘最多嘗試 5 次
 def login():
     data = request.get_json()
     email = data.get('email')
@@ -236,6 +248,7 @@ def login():
     return jsonify({'status': 'pending_verification'}), 200
 
 @app.route('/api/verify-code', methods=['POST'])
+@limiter.limit("10 per minute")  # 防止暴力嘗試驗證碼
 def verify_code():
     data = request.get_json()
     email = data.get('email')
