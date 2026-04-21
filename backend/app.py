@@ -136,7 +136,7 @@ def check_task_deadlines():
                 db.session.commit()
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=check_task_deadlines, trigger="interval", minutes=60) # 每小時檢查一次
+scheduler.add_job(func=check_task_deadlines, trigger="interval", minutes=5) # 每5分鐘檢查一次
 scheduler.start()
 
 
