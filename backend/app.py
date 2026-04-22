@@ -17,6 +17,7 @@ import random
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import calendar_sync
 
 load_dotenv()
 
@@ -294,6 +295,78 @@ def verify_code():
     access_token = create_access_token(identity=str(user.id))
     return jsonify({'status': 'success', 'token': access_token, 'username': user.email.split('@')[0]}), 200
 
+# --- Google Calendar Routes ---
+@app.route('/api/auth/google/url', methods=['GET'])
+@jwt_required()
+def get_google_url():
+    user_id = get_jwt_identity()
+    redirect_uri = request.args.get('redirect_uri', 'http://localhost:5173/dashboard')
+    try:
+        url = calendar_sync.get_google_auth_url(redirect_uri, user_id)
+        return jsonify({'url': url}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
+
+@app.route('/api/auth/google/callback', methods=['POST'])
+@jwt_required()
+def google_callback():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    code = data.get('code')
+    redirect_uri = data.get('redirect_uri', 'http://localhost:5173/dashboard')
+    
+    if not code:
+        return jsonify({'message': 'Missing code'}), 400
+        
+    try:
+        creds = calendar_sync.exchange_code(code, redirect_uri)
+        refresh_token = creds.get('refresh_token')
+        
+        user = User.query.get(user_id)
+        if refresh_token:
+            user.google_refresh_token_encrypted = calendar_sync.encrypt_token(refresh_token)
+        
+        user.is_calendar_enabled = True
+        db.session.commit()
+        return jsonify({'status': 'success', 'is_calendar_enabled': True}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 400
+
+@app.route('/api/auth/google/status', methods=['GET'])
+@jwt_required()
+def google_status():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    return jsonify({
+        'is_linked': bool(user.google_refresh_token_encrypted),
+        'is_calendar_enabled': user.is_calendar_enabled
+    }), 200
+
+@app.route('/api/auth/google/toggle', methods=['POST'])
+@jwt_required()
+def google_toggle():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    enabled = data.get('enabled', False)
+    
+    user = User.query.get(user_id)
+    if not user.google_refresh_token_encrypted:
+        return jsonify({'message': 'Calendar not linked yet'}), 400
+        
+    user.is_calendar_enabled = enabled
+    db.session.commit()
+    return jsonify({'status': 'success', 'is_calendar_enabled': enabled}), 200
+
+@app.route('/api/auth/google/unlink', methods=['POST'])
+@jwt_required()
+def google_unlink():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    user.google_refresh_token_encrypted = None
+    user.is_calendar_enabled = False
+    db.session.commit()
+    return jsonify({'status': 'success'}), 200
+
 # --- Task Routes ---
 @app.route('/api/tasks', methods=['GET'])
 @jwt_required()
@@ -338,6 +411,18 @@ def create_task():
     new_task = Task(user_id=user_id, content=content.strip(), due_date=due_date)
     db.session.add(new_task)
     db.session.commit()
+    
+    # Google Calendar Sync
+    user = User.query.get(user_id)
+    if user.is_calendar_enabled and user.google_refresh_token_encrypted:
+        try:
+            refresh_token = calendar_sync.decrypt_token(user.google_refresh_token_encrypted)
+            event_id = calendar_sync.sync_task_to_google(refresh_token, new_task, action='create')
+            if event_id:
+                new_task.google_event_id = event_id
+                db.session.commit()
+        except Exception as e:
+            print(f"Sync create error: {e}")
     
     return jsonify({
         'id': new_task.id,
@@ -388,6 +473,15 @@ def update_task(task_id):
         
     db.session.commit()
     
+    # Google Calendar Sync
+    user = User.query.get(user_id)
+    if user.is_calendar_enabled and user.google_refresh_token_encrypted and task.google_event_id:
+        try:
+            refresh_token = calendar_sync.decrypt_token(user.google_refresh_token_encrypted)
+            calendar_sync.sync_task_to_google(refresh_token, task, action='update')
+        except Exception as e:
+            print(f"Sync update error: {e}")
+    
     return jsonify({
         'id': task.id,
         'content': task.content,
@@ -427,6 +521,15 @@ def delete_task(task_id):
     if not task:
         return jsonify({'message': 'Task not found'}), 404
         
+    # Google Calendar Sync
+    user = User.query.get(user_id)
+    if user.is_calendar_enabled and user.google_refresh_token_encrypted and task.google_event_id:
+        try:
+            refresh_token = calendar_sync.decrypt_token(user.google_refresh_token_encrypted)
+            calendar_sync.sync_task_to_google(refresh_token, task, action='delete')
+        except Exception as e:
+            print(f"Sync delete error: {e}")
+
     db.session.delete(task)
     db.session.commit()
     return jsonify({'message': 'Task deleted'}), 200

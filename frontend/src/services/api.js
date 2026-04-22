@@ -91,3 +91,42 @@ export const statsAPI = {
     return res.json();
   }
 };
+
+export const googleAPI = {
+  getAuthUrl: async (redirectUri) => {
+    const res = await fetch(`${BASE_URL}/auth/google/url?redirect_uri=${encodeURIComponent(redirectUri)}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Failed to get Google Auth URL');
+    return res.json();
+  },
+  callback: async (code, redirectUri) => {
+    const res = await fetch(`${BASE_URL}/auth/google/callback`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ code, redirect_uri: redirectUri })
+    });
+    if (!res.ok) throw new Error('Failed to link Google account');
+    return res.json();
+  },
+  getStatus: async () => {
+    const res = await fetch(`${BASE_URL}/auth/google/status`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Failed to get Google status');
+    return res.json();
+  },
+  toggleSync: async (enabled) => {
+    const res = await fetch(`${BASE_URL}/auth/google/toggle`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ enabled })
+    });
+    if (!res.ok) throw new Error('Failed to toggle Google sync');
+    return res.json();
+  },
+  unlink: async () => {
+    const res = await fetch(`${BASE_URL}/auth/google/unlink`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to unlink Google account');
+    return res.json();
+  }
+};

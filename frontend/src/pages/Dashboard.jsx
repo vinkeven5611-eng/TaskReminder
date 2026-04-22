@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { taskAPI } from '../services/api';
+import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
-import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock } from 'lucide-react';
+import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink } from 'lucide-react';
 
 export default function Dashboard({ setAuth }) {
   const [tasks, setTasks] = useState([]);
@@ -9,13 +9,82 @@ export default function Dashboard({ setAuth }) {
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [filter, setFilter] = useState('all'); // all, active, completed
   const username = localStorage.getItem('taskflow_username') || 'User';
+  
+  // Google Calendar State
+  const [showSettings, setShowSettings] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState({ is_linked: false, is_calendar_enabled: false });
+  const [isLinking, setIsLinking] = useState(false);
 
   useEffect(() => {
     fetchTasks();
+    checkGoogleStatus();
+    
+    // Handle OAuth Callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      handleGoogleCallback(code);
+    }
+
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
       Notification.requestPermission();
     }
   }, []);
+
+  const checkGoogleStatus = async () => {
+    try {
+      const status = await googleAPI.getStatus();
+      setGoogleStatus(status);
+    } catch (err) {
+      console.error('Failed to get Google status:', err);
+    }
+  };
+
+  const handleGoogleCallback = async (code) => {
+    try {
+      setIsLinking(true);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      const redirectUri = window.location.origin + window.location.pathname;
+      const result = await googleAPI.callback(code, redirectUri);
+      setGoogleStatus({ is_linked: true, is_calendar_enabled: result.is_calendar_enabled });
+      alert('Google 日曆連結成功！');
+    } catch (err) {
+      alert('連結失敗，請重試！');
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const handleLinkGoogle = async () => {
+    try {
+      const redirectUri = window.location.origin + window.location.pathname;
+      const { url } = await googleAPI.getAuthUrl(redirectUri);
+      window.location.href = url;
+    } catch (err) {
+      alert('無法獲取授權網址');
+    }
+  };
+
+  const handleToggleSync = async () => {
+    try {
+      const newState = !googleStatus.is_calendar_enabled;
+      await googleAPI.toggleSync(newState);
+      setGoogleStatus(prev => ({ ...prev, is_calendar_enabled: newState }));
+    } catch (err) {
+      alert('切換失敗');
+    }
+  };
+
+  const handleUnlinkGoogle = async () => {
+    if (!window.confirm('確定要解除連結嗎？這不會刪除已同步的日曆事件。')) return;
+    try {
+      await googleAPI.unlink();
+      setGoogleStatus({ is_linked: false, is_calendar_enabled: false });
+    } catch (err) {
+      alert('解除連結失敗');
+    }
+  };
 
   useEffect(() => {
     const checkTasks = () => {
@@ -126,10 +195,77 @@ export default function Dashboard({ setAuth }) {
           <h2>早安，{username}</h2>
           <p>今天是 {new Date().toLocaleDateString('zh-TW')}，準備好完成目標了嗎？</p>
         </div>
-        <button className="secondary" onClick={handleLogout} title="登出">
-          <LogOut size={18} /> 登出
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="secondary" onClick={() => setShowSettings(true)} title="設定">
+            <Settings size={18} /> 設定
+          </button>
+          <button className="secondary" onClick={handleLogout} title="登出">
+            <LogOut size={18} /> 登出
+          </button>
+        </div>
       </header>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Settings size={24} /> 系統設定與整合
+            </h3>
+            
+            <div className="setting-card" style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <Calendar size={24} style={{ color: '#4285F4' }} />
+                <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Google 日曆雙向同步</h4>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                將您的任務自動同步到 Google 日曆，並在日曆上修改時自動更新回 TaskReminder。
+              </p>
+              
+              {!googleStatus.is_linked ? (
+                <button 
+                  onClick={handleLinkGoogle}
+                  disabled={isLinking}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', background: '#fff', color: '#3c4043', padding: '0.75rem', borderRadius: '8px', border: '1px solid #dadce0', fontWeight: '500', fontSize: '0.95rem' }}
+                >
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style={{ width: '18px', height: '18px' }} />
+                  {isLinking ? '連結中...' : '使用 Google 帳號連結'}
+                </button>
+              ) : (
+                <div className="google-settings">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                    <span style={{ fontWeight: '500' }}>啟用自動同步</span>
+                    <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={googleStatus.is_calendar_enabled} 
+                        onChange={handleToggleSync} 
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                      />
+                      <span className="slider" style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: googleStatus.is_calendar_enabled ? '#10b981' : '#475569', transition: '.4s', borderRadius: '24px' }}>
+                        <span style={{ position: 'absolute', height: '18px', width: '18px', left: googleStatus.is_calendar_enabled ? '26px' : '3px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }}></span>
+                      </span>
+                    </label>
+                  </div>
+                  <button 
+                    onClick={handleUnlinkGoogle}
+                    style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', fontWeight: '500' }}
+                  >
+                    <Unlink size={16} /> 解除連結
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <button 
+              onClick={() => setShowSettings(false)}
+              style={{ marginTop: '2rem', width: '100%', padding: '0.75rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '8px' }}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
 
       <form className="task-input-section fade-in delay-1" onSubmit={handleAddTask}>
         <div className="input-wrapper" style={{ flex: 1 }}>
