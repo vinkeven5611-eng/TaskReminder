@@ -10,7 +10,14 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     skip_2fa = db.Column(db.Boolean, default=False)
-    tasks = db.relationship('Task', backref='user', lazy=True)
+    
+    # --- Google Calendar 同步擴充欄位 ---
+    google_refresh_token_encrypted = db.Column(db.Text, nullable=True)
+    is_calendar_enabled = db.Column(db.Boolean, default=False)
+    calendar_webhook_id = db.Column(db.String(100), nullable=True)
+    calendar_sync_token = db.Column(db.String(100), nullable=True)
+
+    tasks = db.relationship('Task', backref='owner', lazy=True)
 
 class Task(db.Model):
     __tablename__ = 'tasks'
@@ -28,6 +35,10 @@ class Task(db.Model):
     # 後端 Email 通知狀態
     email_notified_24h = db.Column(db.Boolean, default=False)
     email_notified_1h = db.Column(db.Boolean, default=False)
+    
+    # --- Google Calendar 同步擴充欄位 ---
+    google_event_id = db.Column(db.String(255), index=True, nullable=True)
+    last_synced_at = db.Column(db.DateTime, nullable=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
