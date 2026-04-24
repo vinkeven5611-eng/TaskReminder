@@ -6,8 +6,13 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 import json
 
-# Scopes needed for Google Calendar
-SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+# Scopes needed for Google Calendar and User Info
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'openid'
+]
 
 def get_fernet():
     key = os.getenv('ENCRYPTION_KEY')
