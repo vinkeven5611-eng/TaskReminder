@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+// Trigger redeploy for UI update verification
 import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
 import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink } from 'lucide-react';
