@@ -171,7 +171,7 @@ export default function Auth({ setAuth }) {
           </div>
         )}
 
-        {isLogin && step === 2 && (
+        {step === 2 && (
           <div className="fade-in delay-1">
             <div className="auth-header">
               <h2>安全驗證</h2>
@@ -203,7 +203,7 @@ export default function Auth({ setAuth }) {
           </div>
         )}
 
-        {isLogin && step === 3 && (
+        {step === 3 && (
           <div className="fade-in delay-2">
             <div className="auth-header">
               <h2>信任此裝置？</h2>
