@@ -213,10 +213,10 @@ def register():
     password = data.get('password')
     
     if not email or not password:
-        return jsonify({'message': 'Missing email or password'}), 400
+        return jsonify({'message': '請輸入電子郵件與密碼'}), 400
         
     if User.query.filter_by(email=email).first():
-        return jsonify({'message': 'User already exists'}), 400
+        return jsonify({'message': '此帳號已存在，請直接登入'}), 400
         
     code = generate_verification_code()
     send_verification_email(email, code)
@@ -239,7 +239,7 @@ def login():
     
     user = User.query.filter_by(email=email).first()
     if not user or not bcrypt.check_password_hash(user.password_hash, password):
-        return jsonify({'message': 'Invalid credentials'}), 401
+        return jsonify({'message': '電子郵件或密碼錯誤'}), 401
     
     if user.skip_2fa:
         access_token = create_access_token(identity=str(user.id))
@@ -265,18 +265,18 @@ def verify_code():
     skip_2fa = data.get('skip_2fa', False)
     
     if not email or not code:
-        return jsonify({'message': 'Missing data'}), 400
+        return jsonify({'message': '資料缺失'}), 400
         
     pending = pending_verifications.get(email)
     if not pending:
-        return jsonify({'message': 'No pending verification or expired'}), 400
+        return jsonify({'message': '驗證逾時或無效，請重新操作'}), 400
         
     if datetime.utcnow() > pending['expires_at']:
         del pending_verifications[email]
-        return jsonify({'message': 'Verification code expired'}), 400
+        return jsonify({'message': '驗證碼已過期，請重新發送'}), 400
         
     if pending['code'] != code:
-        return jsonify({'message': 'Invalid verification code'}), 401
+        return jsonify({'message': '驗證碼錯誤，請重新輸入'}), 401
         
     action = pending['action']
     
@@ -319,17 +319,23 @@ def google_callback():
         return jsonify({'message': 'Missing code'}), 400
         
     try:
-        creds = calendar_sync.exchange_code(code, redirect_uri)
+        creds = calendar_sync.exchange_code(code, redirect_uri, user_id=user_id)
         refresh_token = creds.get('refresh_token')
         
         user = User.query.get(user_id)
         if refresh_token:
             user.google_refresh_token_encrypted = calendar_sync.encrypt_token(refresh_token)
+            # Fetch and store Google email
+            email = calendar_sync.get_user_email(refresh_token)
+            if email:
+                user.google_email = email
         
         user.is_calendar_enabled = True
         db.session.commit()
         return jsonify({'status': 'success', 'is_calendar_enabled': True}), 200
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'message': str(e)}), 400
 
 @app.route('/api/auth/google/status', methods=['GET'])
@@ -337,9 +343,25 @@ def google_callback():
 def google_status():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    
+    # Auto-fill email if missing but linked
+    if user.google_refresh_token_encrypted and not user.google_email:
+        print(f"DEBUG: Attempting to auto-fill email for user {user.id}")
+        try:
+            refresh_token = calendar_sync.decrypt_token(user.google_refresh_token_encrypted)
+            email = calendar_sync.get_user_email(refresh_token)
+            if email:
+                user.google_email = email
+                db.session.commit()
+                print(f"DEBUG: Successfully saved email {email}")
+        except Exception as e:
+            print(f"DEBUG: Auto-fill failed: {e}")
+            pass
+
     return jsonify({
         'is_linked': bool(user.google_refresh_token_encrypted),
-        'is_calendar_enabled': user.is_calendar_enabled
+        'is_calendar_enabled': user.is_calendar_enabled,
+        'google_email': user.google_email
     }), 200
 
 @app.route('/api/auth/google/toggle', methods=['POST'])
@@ -366,6 +388,14 @@ def google_unlink():
     user.is_calendar_enabled = False
     db.session.commit()
     return jsonify({'status': 'success'}), 200
+
+@app.route('/api/auth/google/sync', methods=['POST'])
+@jwt_required()
+def google_sync():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    result = calendar_sync.pull_from_google(user)
+    return jsonify(result), 200
 
 # --- Task Routes ---
 @app.route('/api/tasks', methods=['GET'])

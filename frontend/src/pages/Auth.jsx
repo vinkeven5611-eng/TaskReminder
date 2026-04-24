@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { authAPI, statsAPI } from '../services/api';
-import { Mail, Lock, KeyRound, AlertCircle, ArrowRight, UserPlus, LogIn, Users } from 'lucide-react';
+import { Mail, Lock, KeyRound, AlertCircle, ArrowRight, UserPlus, LogIn, Users, Eye, EyeOff } from 'lucide-react';
 
 export default function Auth({ setAuth }) {
   const [isLogin, setIsLogin] = useState(true);
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [stats, setStats] = useState({ daily: 0, total: 0 });
 
   useEffect(() => {
@@ -28,6 +31,9 @@ export default function Auth({ setAuth }) {
       if (isLogin) {
         data = await authAPI.login(email, password);
       } else {
+        if (password !== confirmPassword) {
+          throw new Error('兩次輸入的密碼不一致');
+        }
         data = await authAPI.register(email, password);
       }
       
@@ -75,7 +81,15 @@ export default function Auth({ setAuth }) {
 
   return (
     <div className="container" style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div className="auth-container" style={{ flex: 1, margin: '5vh auto', MaxWidth: '440px' }}>
+      <div className="auth-container" style={{ 
+        flex: 1, 
+        margin: '5vh auto', 
+        maxWidth: '440px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center',
+        minHeight: '400px'
+      }}>
         
         {step === 1 && (
           <div className="fade-in">
@@ -102,14 +116,42 @@ export default function Auth({ setAuth }) {
               <div className="input-wrapper">
                 <Lock className="input-icon" size={20} />
                 <input 
-                  type="password" 
-                  placeholder="通行密碼" 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder={isLogin ? "通行密碼" : "設定通行密碼 (至少 6 位)"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
                 />
+                <button 
+                  type="button" 
+                  className="icon-btn" 
+                  style={{ position: 'absolute', right: '0.5rem', background: 'transparent', boxShadow: 'none' }}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
+              {!isLogin && (
+                <div className="input-wrapper">
+                  <KeyRound className="input-icon" size={20} />
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    placeholder="再次確認密碼" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    className="icon-btn" 
+                    style={{ position: 'absolute', right: '0.5rem', background: 'transparent', boxShadow: 'none' }}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              )}
               <button type="submit" disabled={loading}>
                 {loading ? '處理中...' : (
                   <>
@@ -129,7 +171,7 @@ export default function Auth({ setAuth }) {
           </div>
         )}
 
-        {step === 2 && (
+        {isLogin && step === 2 && (
           <div className="fade-in delay-1">
             <div className="auth-header">
               <h2>安全驗證</h2>
@@ -161,7 +203,7 @@ export default function Auth({ setAuth }) {
           </div>
         )}
 
-        {step === 3 && (
+        {isLogin && step === 3 && (
           <div className="fade-in delay-2">
             <div className="auth-header">
               <h2>信任此裝置？</h2>

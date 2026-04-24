@@ -14,6 +14,7 @@ class User(db.Model):
     # --- Google Calendar 同步擴充欄位 ---
     google_refresh_token_encrypted = db.Column(db.Text, nullable=True)
     is_calendar_enabled = db.Column(db.Boolean, default=False)
+    google_email = db.Column(db.String(120), nullable=True)
     calendar_webhook_id = db.Column(db.String(100), nullable=True)
     calendar_sync_token = db.Column(db.String(100), nullable=True)
 

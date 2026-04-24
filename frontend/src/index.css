@@ -381,27 +381,33 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
 
 /* Custom Checkbox Status Tracker */
 .custom-checkbox {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  border: 2px solid var(--text-muted);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border-active);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 1.25rem;
   cursor: pointer;
-  transition: all 0.2s;
-  color: transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgba(255, 255, 255, 0.15); /* Faint checkmark always visible for mobile clarity */
+  background: rgba(255, 255, 255, 0.03);
+  flex-shrink: 0;
 }
 
 .custom-checkbox:hover {
   border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  transform: scale(1.1);
 }
 
 .task-card.completed .custom-checkbox {
   background: var(--primary);
   border-color: var(--primary);
   color: white;
+  box-shadow: 0 0 15px var(--primary-glow);
 }
 
 .task-content {

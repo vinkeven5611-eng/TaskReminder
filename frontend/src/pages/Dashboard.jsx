@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
 import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink } from 'lucide-react';
@@ -12,8 +12,13 @@ export default function Dashboard({ setAuth }) {
   
   // Google Calendar State
   const [showSettings, setShowSettings] = useState(false);
-  const [googleStatus, setGoogleStatus] = useState({ is_linked: false, is_calendar_enabled: false });
+  const [confirmData, setConfirmData] = useState(null); // { id, type: 'toggle'|'delete', is_completed?, content }
+  const [googleStatus, setGoogleStatus] = useState({ is_linked: false, is_calendar_enabled: false, google_email: null });
   const [isLinking, setIsLinking] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
+  const callbackHandled = useRef(false);
 
   useEffect(() => {
     fetchTasks();
@@ -22,7 +27,8 @@ export default function Dashboard({ setAuth }) {
     // Handle OAuth Callback
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    if (code) {
+    if (code && !callbackHandled.current) {
+      callbackHandled.current = true;
       handleGoogleCallback(code);
     }
 
@@ -30,6 +36,8 @@ export default function Dashboard({ setAuth }) {
       Notification.requestPermission();
     }
   }, []);
+
+  const REDIRECT_URI = window.location.origin + '/dashboard';
 
   const checkGoogleStatus = async () => {
     try {
@@ -81,10 +89,62 @@ export default function Dashboard({ setAuth }) {
     try {
       await googleAPI.unlink();
       setGoogleStatus({ is_linked: false, is_calendar_enabled: false });
+      setLastSyncTime(null);
     } catch (err) {
       alert('解除連結失敗');
     }
   };
+
+  const performSync = async (isManual = false) => {
+    if (!googleStatus.is_linked || !googleStatus.is_calendar_enabled) return;
+    
+    try {
+      setIsSyncing(true);
+      const res = await googleAPI.syncTasks();
+      
+      if (res.status === 'success') {
+        const now = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setLastSyncTime(now);
+        
+        // Add to history
+        const newLog = `🔄 ${now}: 同步完成 (更新:${res.updated} 刪除:${res.deleted})`;
+        setSyncHistory(prev => [newLog, ...prev].slice(0, 3));
+
+        if (res.updated > 0 || res.deleted > 0) {
+           await fetchTasks(); // Refresh list if changes pulled
+           if (isManual) {
+             alert(`從 Google 日曆同步完成！更新: ${res.updated}，刪除: ${res.deleted}`);
+           }
+        } else if (isManual) {
+           alert('已經是最新狀態，沒有新的變更。');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      if (isManual) alert('同步失敗');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleManualSync = () => performSync(true);
+
+  // Auto-sync when user returns to the tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && googleStatus.is_calendar_enabled) {
+        performSync(false);
+      }
+    };
+    
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [googleStatus.is_calendar_enabled, googleStatus.is_linked]);
 
   useEffect(() => {
     const checkTasks = () => {
@@ -168,18 +228,48 @@ export default function Dashboard({ setAuth }) {
     }
   };
 
-  const handleUpdateTask = async (id, data) => {
+  const handleUpdateTask = (id, data) => {
+    // If we are toggling completion, show confirmation modal
+    if (data.hasOwnProperty('is_completed')) {
+      const task = tasks.find(t => t.id === id);
+      setConfirmData({ id, type: 'toggle', is_completed: data.is_completed, content: task.content });
+      return;
+    }
+    executeTaskUpdate(id, data);
+  };
+
+  const executeTaskUpdate = async (id, data) => {
     try {
       const updatedTask = await taskAPI.updateTask(id, data);
       setTasks(tasks.map(t => t.id === id ? { ...t, ...updatedTask } : t));
-    } catch (err) {}
+    } catch (err) {
+      console.error('Update failed:', err);
+    }
   };
 
-  const handleDeleteTask = async (id) => {
+  const handleConfirmAction = () => {
+    if (confirmData) {
+      if (confirmData.type === 'toggle') {
+        executeTaskUpdate(confirmData.id, { is_completed: confirmData.is_completed });
+      } else if (confirmData.type === 'delete') {
+        executeTaskDelete(confirmData.id);
+      }
+      setConfirmData(null);
+    }
+  };
+
+  const handleDeleteTask = (id) => {
+    const task = tasks.find(t => t.id === id);
+    setConfirmData({ id, type: 'delete', content: task.content });
+  };
+
+  const executeTaskDelete = async (id) => {
     try {
       await taskAPI.deleteTask(id);
       setTasks(tasks.filter(t => t.id !== id));
-    } catch (err) {}
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -233,8 +323,13 @@ export default function Dashboard({ setAuth }) {
                 </button>
               ) : (
                 <div className="google-settings">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                    <span style={{ fontWeight: '500' }}>啟用自動同步</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <span style={{ fontWeight: '500' }}>啟用自動同步</span>
+                      {googleStatus.google_email && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>帳號: {googleStatus.google_email}</span>
+                      )}
+                    </div>
                     <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
                       <input 
                         type="checkbox" 
@@ -247,6 +342,43 @@ export default function Dashboard({ setAuth }) {
                       </span>
                     </label>
                   </div>
+                  
+                  {/* Sync Log Area */}
+                  {googleStatus.is_calendar_enabled && (
+                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>
+                          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
+                          即時連線中
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          上次同步：{lastSyncTime ? lastSyncTime : '剛剛'}
+                        </div>
+                      </div>
+                      
+                      {/* Detailed History */}
+                      {syncHistory.length > 0 && (
+                        <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', marginBottom: '0.75rem' }}>
+                          {syncHistory.map((log, i) => (
+                            <div key={i} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: i === syncHistory.length - 1 ? 0 : '0.3rem', borderBottom: i === syncHistory.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)', paddingBottom: i === syncHistory.length - 1 ? 0 : '0.3rem' }}>
+                              {log}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <button 
+                        onClick={handleManualSync}
+                        disabled={isSyncing}
+                        style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: '0.2s' }}
+                        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                      >
+                        {isSyncing ? '🔄 同步中...' : '🔄 立即檢查變更'}
+                      </button>
+                    </div>
+                  )}
+
                   <button 
                     onClick={handleUnlinkGoogle}
                     style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', fontWeight: '500' }}
@@ -319,6 +451,47 @@ export default function Dashboard({ setAuth }) {
           ))
         )}
       </div>
+      {/* Confirmation Modal */}
+      {confirmData && (
+        <div className="modal-overlay">
+          <div className="modal-content fade-in" style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <div style={{ 
+              width: '60px', 
+              height: '60px', 
+              background: confirmData.type === 'delete' ? 'rgba(239, 68, 68, 0.1)' : (confirmData.is_completed ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255, 255, 255, 0.05)'),
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.5rem',
+              color: confirmData.type === 'delete' ? 'var(--danger)' : 'var(--primary)'
+            }}>
+              {confirmData.type === 'delete' ? <LogOut size={30} style={{ transform: 'rotate(90deg)' }} /> : <CheckSquare size={30} />}
+            </div>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>
+              {confirmData.type === 'delete' ? '確認刪除' : '確認操作'}
+            </h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
+              {confirmData.type === 'delete' ? (
+                <>確定要永久刪除「<span style={{ color: '#fff', fontWeight: '600' }}>{confirmData.content}</span>」嗎？此操作無法復原。</>
+              ) : (
+                <>確定要將任務「<span style={{ color: '#fff', fontWeight: '600' }}>{confirmData.content}</span>」標記為{confirmData.is_completed ? '已完成' : '未完成'}嗎？</>
+              )}
+            </p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="secondary" style={{ flex: 1 }} onClick={() => setConfirmData(null)}>
+                取消
+              </button>
+              <button 
+                style={{ flex: 1, background: confirmData.type === 'delete' ? 'var(--danger)' : 'var(--primary)' }} 
+                onClick={handleConfirmAction}
+              >
+                確定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

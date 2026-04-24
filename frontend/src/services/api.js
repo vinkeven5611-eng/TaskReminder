@@ -128,5 +128,13 @@ export const googleAPI = {
     });
     if (!res.ok) throw new Error('Failed to unlink Google account');
     return res.json();
+  },
+  syncTasks: async () => {
+    const res = await fetch(`${BASE_URL}/auth/google/sync`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to sync tasks from Google');
+    return res.json();
   }
 };

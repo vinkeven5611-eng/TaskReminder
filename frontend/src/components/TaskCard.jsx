@@ -34,7 +34,11 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
   return (
     <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
-      <div className="custom-checkbox" onClick={toggleComplete}>
+      <div 
+        className="custom-checkbox" 
+        onClick={toggleComplete}
+        title={task.is_completed ? "標記為未完成" : "點擊標記為完成"}
+      >
         <Check size={16} strokeWidth={3} />
       </div>
       
