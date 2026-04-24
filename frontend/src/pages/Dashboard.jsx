@@ -352,11 +352,18 @@ export default function Dashboard({ setAuth }) {
                             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
                             即時連線中
                           </div>
-                          {googleStatus.google_email && (
+                          {googleStatus.google_email ? (
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', paddingLeft: '1.3rem' }}>
                               {googleStatus.google_email}
                             </div>
+                          ) : (
+                            <div style={{ fontSize: '0.7rem', color: '#ff9800', paddingLeft: '1.3rem' }}>
+                              [ 系統正在確認帳號中... ]
+                            </div>
                           )}
+                          <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', paddingLeft: '1.3rem', marginTop: '2px' }}>
+                            Debug: v1.0.5 - Updated UI
+                          </div>
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           上次同步：{lastSyncTime ? lastSyncTime : '剛剛'}
