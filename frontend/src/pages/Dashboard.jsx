@@ -286,8 +286,8 @@ export default function Dashboard({ setAuth }) {
           <p>今天是 {new Date().toLocaleDateString('zh-TW')}，準備好完成目標了嗎？</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="secondary" onClick={() => setShowSettings(true)} title="設定">
-            <Settings size={18} /> 設定
+          <button className="secondary" onClick={() => setShowSettings(true)} title="同步 Google 日曆">
+            <Calendar size={18} /> 同步 Google 日曆
           </button>
           <button className="secondary" onClick={handleLogout} title="登出">
             <LogOut size={18} /> 登出
