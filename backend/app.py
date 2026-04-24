@@ -332,7 +332,7 @@ def google_callback():
         
         user.is_calendar_enabled = True
         db.session.commit()
-        return jsonify({'status': 'success', 'is_calendar_enabled': True}), 200
+        return jsonify({'status': 'success', 'is_calendar_enabled': True, 'google_email': user.google_email}), 200
     except Exception as e:
         import traceback
         traceback.print_exc()

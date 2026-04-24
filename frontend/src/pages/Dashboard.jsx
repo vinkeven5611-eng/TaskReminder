@@ -55,7 +55,7 @@ export default function Dashboard({ setAuth }) {
       window.history.replaceState({}, document.title, window.location.pathname);
       const redirectUri = window.location.origin + window.location.pathname;
       const result = await googleAPI.callback(code, redirectUri);
-      setGoogleStatus({ is_linked: true, is_calendar_enabled: result.is_calendar_enabled });
+      setGoogleStatus({ is_linked: true, is_calendar_enabled: result.is_calendar_enabled, google_email: result.google_email });
       alert('Google 日曆連結成功！');
     } catch (err) {
       alert('連結失敗，請重試！');
@@ -347,9 +347,16 @@ export default function Dashboard({ setAuth }) {
                   {googleStatus.is_calendar_enabled && (
                     <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>
-                          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
-                          即時連線中
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
+                            即時連線中
+                          </div>
+                          {googleStatus.google_email && (
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', paddingLeft: '1.3rem' }}>
+                              {googleStatus.google_email}
+                            </div>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           上次同步：{lastSyncTime ? lastSyncTime : '剛剛'}
