@@ -84,7 +84,7 @@ def send_reminder_email(to_email, task_name, due_date, message):
         msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
         server.starttls()
         server.login(SMTP_USERNAME, SMTP_PASSWORD)
         server.send_message(msg)
@@ -109,7 +109,7 @@ def send_verification_email(to_email, code):
         msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
         server.starttls()
         server.login(SMTP_USERNAME, SMTP_PASSWORD)
         server.send_message(msg)
