@@ -45,7 +45,11 @@ export default function Auth({ setAuth }) {
         setStep(2);
       }
     } catch (err) {
-      setError(err.message);
+      if (err.message === 'Failed to fetch') {
+        setError('無法連接至伺服器，請確認後端已啟動');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

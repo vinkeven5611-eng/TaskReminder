@@ -41,6 +41,8 @@ CORS(app,
     origins=[
         "http://localhost:5173",
         "https://task-reminder-omega-five.vercel.app",
+        "https://task-rminder-omega-five.vercel.app",
+        r"https://task-reminder-.*\.vercel\.app"
     ],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
