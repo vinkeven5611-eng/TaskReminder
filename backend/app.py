@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from models import db, User, Task, DailyStat
 from dotenv import load_dotenv
 import logging
-import resend
+import requests
 from email.mime.text import MIMEText
 from datetime import timedelta
 import random
@@ -67,7 +67,9 @@ with app.app_context():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-resend.api_key = os.getenv('RESEND_API_KEY')
+BREVO_API_KEY = os.getenv('BREVO_API_KEY')
+SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'vinkeven5611@gmail.com')
+SENDER_NAME = "TaskFlow"
 
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
@@ -76,16 +78,22 @@ SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
 SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'noreply@taskflow.local')
 
 def send_reminder_email(to_email, task_name, due_date, message):
-    if not resend.api_key:
+    if not BREVO_API_KEY:
         logger.info(f"[Mock Email] To: {to_email} | Task: {task_name} | Due: {due_date} | Message: {message}")
         return
 
     try:
-        params = {
-            "from": "TaskFlow <onboarding@resend.dev>",
-            "to": [to_email],
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": BREVO_API_KEY
+        }
+        payload = {
+            "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
+            "to": [{"email": to_email}],
             "subject": "TaskFlow 任務提醒",
-            "html": f"""
+            "htmlContent": f"""
                 <div style='font-family: sans-serif; padding: 20px; color: #333;'>
                     <h2 style='color: #4f46e5;'>任務提醒</h2>
                     <p><strong>任務名稱：</strong>{task_name}</p>
@@ -95,10 +103,13 @@ def send_reminder_email(to_email, task_name, due_date, message):
                 </div>
             """
         }
-        resend.Emails.send(params)
-        logger.info(f"Email sent successfully to {to_email} for task {task_name}")
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Email sent successfully to {to_email} via Brevo")
+        else:
+            logger.error(f"Brevo API error: {response.text}")
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email} for task {task_name}: {e}")
+        logger.error(f"Failed to send email via Brevo: {e}")
 
 pending_verifications = {}
 
@@ -106,16 +117,22 @@ def generate_verification_code():
     return f"{random.randint(0, 9999):04d}"
 
 def send_verification_email(to_email, code):
-    if not resend.api_key:
+    if not BREVO_API_KEY:
         logger.info(f"[Mock Email] To: {to_email} | Code: {code}")
         return
         
     try:
-        params = {
-            "from": "TaskFlow <onboarding@resend.dev>",
-            "to": [to_email],
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": BREVO_API_KEY
+        }
+        payload = {
+            "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
+            "to": [{"email": to_email}],
             "subject": "TaskFlow 驗證碼",
-            "html": f"""
+            "htmlContent": f"""
                 <div style='font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px;'>
                     <h2 style='color: #4f46e5; text-align: center;'>驗證您的帳號</h2>
                     <p style='font-size: 16px;'>您的驗證碼是：</p>
@@ -126,10 +143,13 @@ def send_verification_email(to_email, code):
                 </div>
             """
         }
-        resend.Emails.send(params)
-        logger.info(f"Verification email sent to {to_email}")
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Verification email sent to {to_email} via Brevo")
+        else:
+            logger.error(f"Brevo API error: {response.text}")
     except Exception as e:
-        logger.error(f"Failed to send verification email to {to_email}: {e}")
+        logger.error(f"Failed to send verification email via Brevo: {e}")
 
 def to_utc_iso(dt):
     if not dt: return None
