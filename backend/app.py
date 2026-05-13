@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from models import db, User, Task, DailyStat
 from dotenv import load_dotenv
 import logging
-import smtplib
+import resend
 from email.mime.text import MIMEText
 from datetime import timedelta
 import random
@@ -67,6 +67,8 @@ with app.app_context():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+resend.api_key = os.getenv('RESEND_API_KEY')
+
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
 SMTP_USERNAME = os.getenv('SMTP_USERNAME', '')
@@ -74,21 +76,26 @@ SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
 SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'noreply@taskflow.local')
 
 def send_reminder_email(to_email, task_name, due_date, message):
-    if not SMTP_USERNAME or not SMTP_PASSWORD:
+    if not resend.api_key:
         logger.info(f"[Mock Email] To: {to_email} | Task: {task_name} | Due: {due_date} | Message: {message}")
         return
 
     try:
-        msg = MIMEText(f"任務名稱：{task_name}\n截止時間：{due_date}\n\n{message}")
-        msg['Subject'] = 'TaskFlow 任務提醒'
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = to_email
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
-        server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        params = {
+            "from": "TaskFlow <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": "TaskFlow 任務提醒",
+            "html": f"""
+                <div style='font-family: sans-serif; padding: 20px; color: #333;'>
+                    <h2 style='color: #4f46e5;'>任務提醒</h2>
+                    <p><strong>任務名稱：</strong>{task_name}</p>
+                    <p><strong>截止時間：</strong>{due_date}</p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                    <p>{message}</p>
+                </div>
+            """
+        }
+        resend.Emails.send(params)
         logger.info(f"Email sent successfully to {to_email} for task {task_name}")
     except Exception as e:
         logger.error(f"Failed to send email to {to_email} for task {task_name}: {e}")
@@ -99,21 +106,27 @@ def generate_verification_code():
     return f"{random.randint(0, 9999):04d}"
 
 def send_verification_email(to_email, code):
-    if not SMTP_USERNAME or not SMTP_PASSWORD:
+    if not resend.api_key:
         logger.info(f"[Mock Email] To: {to_email} | Code: {code}")
         return
         
     try:
-        msg = MIMEText(f"您的驗證碼是：{code}\n\n請輸入此驗證碼以繼續。")
-        msg['Subject'] = 'TaskFlow 驗證碼'
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = to_email
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
-        server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        params = {
+            "from": "TaskFlow <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": "TaskFlow 驗證碼",
+            "html": f"""
+                <div style='font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px;'>
+                    <h2 style='color: #4f46e5; text-align: center;'>驗證您的帳號</h2>
+                    <p style='font-size: 16px;'>您的驗證碼是：</p>
+                    <div style='background: #f4f4f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #111;'>
+                        {code}
+                    </div>
+                    <p style='font-size: 14px; color: #666; margin-top: 20px;'>請輸入此驗證碼以繼續。驗證碼將在 10 分鐘後過期。</p>
+                </div>
+            """
+        }
+        resend.Emails.send(params)
         logger.info(f"Verification email sent to {to_email}")
     except Exception as e:
         logger.error(f"Failed to send verification email to {to_email}: {e}")
