@@ -415,6 +415,7 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   display: flex;
   flex-direction: column;
   padding-right: 1rem;
+  min-width: 0;
 }
 
 .task-text {
@@ -459,6 +460,7 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   opacity: 0;
   transform: translateX(10px);
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .task-card:hover .task-actions {
@@ -533,6 +535,10 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+
   .task-input-section {
     flex-direction: column;
     padding: 1rem;
@@ -553,12 +559,17 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   }
 
   .task-card {
-    align-items: flex-start;
+    align-items: center;
+    padding: 1rem;
   }
   
   .task-actions {
     opacity: 1;
     transform: none;
-    margin-top: 0.5rem;
+    margin-top: 0;
+  }
+  
+  .custom-checkbox {
+    margin-right: 0.75rem;
   }
 }
