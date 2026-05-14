@@ -488,7 +488,7 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   left: 0; top: 0; bottom: 0;
   width: 4px;
   background: var(--primary);
-  opacity: 0;
+  opacity: 1; /* Restore permanent visibility */
   transition: opacity 0.3s;
 }
 
