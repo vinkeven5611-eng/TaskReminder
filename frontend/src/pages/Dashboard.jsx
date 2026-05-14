@@ -443,12 +443,18 @@ export default function Dashboard({ setAuth }) {
           />
         </div>
         <div className="chat-actions">
-           <div className={`date-picker-wrapper ${newTaskDueDate ? 'has-date' : ''}`} title="設定截止時間">
-             <Calendar size={18} className="date-icon" />
+           <div 
+             className={`date-picker-wrapper ${newTaskDueDate ? 'has-date' : ''}`} 
+             title="設定截止時間"
+             onClick={() => document.getElementById('date-picker-input').showPicker()}
+           >
+             <Calendar size={18} className="date-icon" style={{ pointerEvents: 'none' }} />
              <input 
+               id="date-picker-input"
                type="datetime-local"
                value={newTaskDueDate}
                onChange={(e) => setNewTaskDueDate(e.target.value)}
+               style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
              />
            </div>
            <button type="submit" className="submit-btn" disabled={!newTaskContent.trim()} title="發送">
