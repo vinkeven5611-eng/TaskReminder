@@ -17,77 +17,88 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     onUpdate(task.id, { is_completed: !task.is_completed });
   };
 
-  const handleSaveEdit = () => {
-    const isDateChanged = editDueDate !== formatForInput(task.due_date);
-    if (editContent.trim() && (editContent !== task.content || isDateChanged)) {
-      const utcDueDate = editDueDate ? new Date(editDueDate).toISOString() : null;
-      onUpdate(task.id, { content: editContent, due_date: utcDueDate });
-    }
+  const handleEdit = () => {
+    setIsEditing(true);
+    resetSwipe();
+  };
+
+  const handleDelete = () => {
+    onDelete(task.id);
+    resetSwipe();
+  };
+
+  const saveEdit = () => {
+    const utcDate = editDueDate ? new Date(editDueDate).toISOString() : null;
+    onUpdate(task.id, { content: editContent, due_date: utcDate });
     setIsEditing(false);
   };
 
-  const formatDate = (isoString) => {
-    if (!isoString) return '';
-    const date = new Date(isoString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const isOverdue = !task.is_completed && task.due_date && new Date(task.due_date) < new Date();
-
   return (
-    <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
-      {!task.is_completed && (
-        <div 
-          className="custom-checkbox" 
-          onClick={toggleComplete}
-          title="點擊標記為完成"
-        >
-          <Check size={16} strokeWidth={3} />
-        </div>
-      )}
-      
-      <div className="task-content">
-        {isEditing ? (
-          <div style={{ display: 'flex', gap: '0.5rem', marginRight: '1rem', flexWrap: 'wrap' }}>
-            <input 
-              type="text" 
-              value={editContent} 
-              onChange={(e) => setEditContent(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-              autoFocus
-              style={{ padding: '0.4rem 0.75rem', flex: 1 }}
-            />
-            <input 
-              type="datetime-local"
-              value={editDueDate}
-              onChange={(e) => setEditDueDate(e.target.value)}
-              style={{ padding: '0.4rem 0.75rem', width: '200px' }}
-            />
-          </div>
-        ) : (
-          <span className="task-text">{task.content}</span>
-        )}
-        
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {task.due_date && (
-            <span className={`task-date-badge date-due ${isOverdue ? 'overdue' : ''}`}>
-              <Calendar size={12} /> {isOverdue ? '已逾期：' : '到期：'}{formatDate(task.due_date)}
-            </span>
-          )}
-        </div>
+    <div className="task-card-container">
+      <div className="task-card-actions-bg">
+        <button className="swipe-action-btn edit" onClick={handleEdit}>
+          <Settings size={20} />
+          <span>編輯</span>
+        </button>
+        <button className="swipe-action-btn delete" onClick={handleDelete}>
+          <LogOut size={20} style={{ transform: 'rotate(90deg)' }} />
+          <span>刪除</span>
+        </button>
       </div>
 
-      <div className="task-actions">
-        {isEditing ? (
-          <>
-            <button className="icon-btn" onClick={handleSaveEdit}><Check size={18} color="var(--primary)" /></button>
-            <button className="icon-btn" onClick={() => { setIsEditing(false); setEditContent(task.content); }}><X size={18} /></button>
-          </>
-        ) : (
-          <>
-            <button className="icon-btn" onClick={() => setIsEditing(true)}><Edit2 size={18} /></button>
-            <button className="icon-btn danger" onClick={() => onDelete(task.id)}><Trash2 size={18} /></button>
-          </>
+      <div 
+        className={`task-card ${task.is_completed ? 'completed' : ''}`}
+        style={{ transform: `translateX(${translateX}px)`, transition: touchStart ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onClick={isSwiped ? resetSwipe : undefined}
+      >
+        {!task.is_completed && (
+          <div 
+            className="custom-checkbox" 
+            onClick={toggleComplete}
+            title="點擊標記為完成"
+          >
+            <Check size={16} strokeWidth={3} />
+          </div>
+        )}
+        
+        <div className="task-content">
+          {isEditing ? (
+            <div className="edit-mode" onClick={e => e.stopPropagation()}>
+              <input 
+                type="text" 
+                value={editContent} 
+                onChange={(e) => setEditContent(e.target.value)}
+                autoFocus
+              />
+              <input 
+                type="datetime-local" 
+                value={editDueDate} 
+                onChange={(e) => setEditDueDate(e.target.value)}
+              />
+              <div className="edit-actions">
+                <button onClick={() => setIsEditing(false)}>取消</button>
+                <button className="primary" onClick={saveEdit}>儲存</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <span className="task-text">{task.content}</span>
+              {task.due_date && (
+                <div className={`task-date-badge ${isOverdue ? 'overdue' : ''}`}>
+                  <span>
+                    {isOverdue ? '已逾期：' : '到期：'}
+                    {new Date(task.due_date).toLocaleString('zh-TW', {
+                      month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
         )}
       </div>
     </div>
