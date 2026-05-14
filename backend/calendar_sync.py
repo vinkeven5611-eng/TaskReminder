@@ -112,13 +112,19 @@ def sync_task_to_google(refresh_token: str, task, action='create'):
         
         # Prepare event payload
         summary = task.content
+        color_id = None # Default color
+
         if task.is_completed:
             summary = f"✅[已完成] {summary}"
+            color_id = '8' # Grey color in Google Calendar to indicate completion
             
         event_body = {
             'summary': summary,
             'description': 'Created via TaskReminder',
         }
+        
+        if color_id:
+            event_body['colorId'] = color_id
         
         # Determine time
         if task.due_date:
