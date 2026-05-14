@@ -286,15 +286,40 @@ export default function Dashboard({ setAuth }) {
           <h2>早安，{username}</h2>
           <p>今天是 {new Date().toLocaleDateString('zh-TW')}，準備好完成目標了嗎？</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="secondary" onClick={() => setShowSettings(true)} title="同步 Google 日曆">
-            <Calendar size={18} /> 同步 Google 日曆
-          </button>
-          <button className="secondary" onClick={handleLogout} title="登出">
-            <LogOut size={18} /> 登出
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          {googleStatus.is_linked ? (
+            <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定 (已連結 Google 日曆)">
+              <div style={{ position: 'relative', display: 'flex' }}>
+                <Calendar size={20} color="var(--primary)" />
+                <span style={{ position: 'absolute', bottom: '-2px', right: '-4px', width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', border: '1.5px solid var(--panel-bg)' }}></span>
+              </div>
+            </button>
+          ) : (
+            <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定">
+              <Settings size={20} />
+            </button>
+          )}
+          <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5' }} onClick={handleLogout} title="登出">
+            <LogOut size={20} />
           </button>
         </div>
       </header>
+
+      {/* Dynamic CTA Banner */}
+      {!googleStatus.is_linked && (
+        <div className="cta-banner fade-in delay-1" onClick={() => setShowSettings(true)}>
+          <div className="cta-content">
+            <div className="cta-icon-wrapper">
+              <Calendar size={24} color="#fff" />
+            </div>
+            <div className="cta-text">
+              <h3>連結 Google 日曆</h3>
+              <p>讓任務自動同步到手機，重要行程不漏接！</p>
+            </div>
+          </div>
+          <span className="cta-arrow">→</span>
+        </div>
+      )}
 
       {/* Settings Modal */}
       {showSettings && (
