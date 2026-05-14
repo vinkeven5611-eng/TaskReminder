@@ -432,27 +432,29 @@ export default function Dashboard({ setAuth }) {
         </div>
       )}
 
-      <form className="task-input-section fade-in delay-1" onSubmit={handleAddTask}>
+      <form className="chat-input-bar fade-in delay-1" onSubmit={handleAddTask}>
         <div className="input-wrapper" style={{ flex: 1 }}>
-          <Search className="input-icon" size={20} />
+          <Plus className="input-icon" size={20} />
           <input 
             type="text" 
-            placeholder="今天需要專注完成什麼任務？" 
+            placeholder="新增任務..." 
             value={newTaskContent}
             onChange={(e) => setNewTaskContent(e.target.value)}
           />
         </div>
-        <div className="input-wrapper" style={{ width: 'max-content' }}>
-          <Clock className="input-icon" size={20} />
-          <input 
-            type="datetime-local"
-            value={newTaskDueDate}
-            onChange={(e) => setNewTaskDueDate(e.target.value)}
-          />
+        <div className="chat-actions">
+           <div className={`date-picker-wrapper ${newTaskDueDate ? 'has-date' : ''}`} title="設定截止時間">
+             <Calendar size={18} className="date-icon" />
+             <input 
+               type="datetime-local"
+               value={newTaskDueDate}
+               onChange={(e) => setNewTaskDueDate(e.target.value)}
+             />
+           </div>
+           <button type="submit" className="submit-btn" disabled={!newTaskContent.trim()} title="發送">
+             <Plus size={20} />
+           </button>
         </div>
-        <button type="submit">
-          <Plus size={20} /> 新增
-        </button>
       </form>
 
       <div className="filters fade-in delay-2">
