@@ -164,8 +164,10 @@ export default function Dashboard({ setAuth }) {
 
           if (hoursDiff <= 0 && !task.notified_due) {
             shouldNotify = true;
-            notifyMsg = `任務「${task.content}」已經到期！`;
+            notifyMsg = `任務「${task.content}」已經到期！已自動標記為完成。`;
             updates.notified_due = true;
+            updates.is_completed = true;
+            taskAPI.updateTask(task.id, { is_completed: true }).catch(console.error);
           } else if (hoursDiff > 0 && hoursDiff <= 1 && !task.notified_1h) {
             shouldNotify = true;
             notifyMsg = `任務「${task.content}」將在 1 小時內到期！`;
