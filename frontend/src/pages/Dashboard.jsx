@@ -216,6 +216,11 @@ export default function Dashboard({ setAuth }) {
       alert('請先輸入你要設定的任務內容！');
       return;
     }
+
+    if (!newTaskDueDate) {
+      alert('請記得點擊日曆圖示設定「任務截止時間」！');
+      return;
+    }
     
     try {
       const utcDueDate = newTaskDueDate ? new Date(newTaskDueDate).toISOString() : null;
