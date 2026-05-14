@@ -483,8 +483,34 @@ export default function Dashboard({ setAuth }) {
       <div className="task-list fade-in delay-3">
         {filteredTasks.length === 0 ? (
           <div className="empty-state">
-            <Inbox size={48} />
-            <p>目前沒有相符的任務，享受片刻的寧靜吧！</p>
+            {tasks.length === 0 ? (
+              // Initial State: No tasks at all
+              <div className="empty-state-content animate-float">
+                <div className="empty-icon-wrapper welcome">
+                  <Plus size={40} />
+                </div>
+                <h3>新的一天開始了！</h3>
+                <p>準備好要征服哪些目標了嗎？在上方新增你的第一個任務吧 🚀</p>
+              </div>
+            ) : filter === 'active' ? (
+              // All Tasks Done State
+              <div className="empty-state-content animate-pulse-soft">
+                <div className="empty-icon-wrapper success">
+                  <CheckSquare size={40} />
+                </div>
+                <h3>太棒了，大功告成！</h3>
+                <p>你已經解決了所有待辦事項，現在是享受放鬆的最佳時刻 ☕✨</p>
+                <div className="celebration-glow"></div>
+              </div>
+            ) : (
+              // Other empty states (e.g., no completed tasks yet)
+              <div className="empty-state-content">
+                <div className="empty-icon-wrapper">
+                  <Inbox size={40} />
+                </div>
+                <p>目前沒有相符的任務，享受片刻的寧靜吧！</p>
+              </div>
+            )}
           </div>
         ) : (
           filteredTasks.map(task => (

@@ -665,6 +665,91 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Empty State Enhancements */
+.empty-state {
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-content h3 {
+  font-size: 1.5rem;
+  margin: 1.5rem 0 0.5rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.empty-state-content p {
+  color: var(--text-muted);
+  max-width: 300px;
+  line-height: 1.6;
+  margin: 0 auto;
+}
+
+.empty-icon-wrapper {
+  width: 100px;
+  height: 100px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  color: var(--text-muted);
+  position: relative;
+  transition: all 0.5s ease;
+}
+
+.empty-icon-wrapper.welcome {
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1);
+}
+
+.empty-icon-wrapper.success {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.1);
+}
+
+/* Celebration Glow Effect */
+.celebration-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Animations */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.9; }
+}
+
 .empty-state svg {
   opacity: 0.5;
   margin-bottom: 1rem;
@@ -676,6 +761,22 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
     padding: 2rem 1rem;
   }
 
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .dashboard-header div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .cta-banner {
+    margin: 0 1.5rem 1.5rem;
+  }
+  
   .chat-input-bar {
     padding: 0.3rem;
   }
@@ -693,11 +794,15 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
     width: 36px;
     height: 36px;
   }
+  
+  .filters {
+    margin: 0 1rem 1.5rem;
+    width: auto;
+    overflow-x: auto;
+  }
 
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .task-list {
+    padding: 0 1rem;
   }
 
   .task-card {
