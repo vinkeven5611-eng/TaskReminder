@@ -72,7 +72,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           <>
             <span className="task-text">{task.content}</span>
             {task.due_date && (
-              <div className={`task-date-badge ${isOverdue ? 'overdue' : ''}`}>
+              <div className={`task-date-badge date-due ${isOverdue ? 'overdue' : ''}`}>
                 <Clock size={12} />
                 <span>
                   {isOverdue ? '已逾期：' : '到期：'}
