@@ -504,6 +504,19 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   color: #818cf8;
 }
 
+.date-due.overdue {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 .task-card.completed .task-text {
   text-decoration: line-through;
   color: #64748b;

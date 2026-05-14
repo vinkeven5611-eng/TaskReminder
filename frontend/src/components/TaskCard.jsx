@@ -32,6 +32,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const isOverdue = !task.is_completed && task.due_date && new Date(task.due_date) < new Date();
+
   return (
     <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
       <div 
@@ -65,12 +67,9 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         )}
         
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <span className="task-date-badge">
-            <Clock size={12} /> {formatDate(task.created_at)}
-          </span>
           {task.due_date && (
-            <span className="task-date-badge date-due">
-              <Calendar size={12} /> 到期：{formatDate(task.due_date)}
+            <span className={`task-date-badge date-due ${isOverdue ? 'overdue' : ''}`}>
+              <Calendar size={12} /> {isOverdue ? '已逾期：' : '到期：'}{formatDate(task.due_date)}
             </span>
           )}
         </div>
