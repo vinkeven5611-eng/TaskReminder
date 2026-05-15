@@ -53,36 +53,26 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     }
   };
 
-  const triggerAndroidAlarm = async (e, index, hour, minute, title, isoDate) => {
+  const triggerAndroidAlarm = (e, index, hour, minute, title, isoDate) => {
     e.stopPropagation();
     
-    // Use the native AlarmPlugin for exact one-time alarms
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AlarmPlugin) {
-      try {
-        const timestamp = new Date(isoDate).getTime();
-        await window.Capacitor.Plugins.AlarmPlugin.setAlarm({ timestamp, title });
-        setClickedAlarms(prev => ({ ...prev, [index]: true }));
-        alert(`✅ 鬧鐘已設定！\n${new Date(isoDate).toLocaleString('zh-TW')} 將為您提醒「${title}」`);
-      } catch (err) {
-        // If exact alarm permission is not granted, guide user to settings
-        if (err.message && err.message.includes('permission')) {
-          if (window.confirm('❗ 需要「精確鬧鐘」權限才能設定跨日提醒。\n\n點確定前往設定開啟')) {
-            const intentUrl = `intent:#Intent;action=android.settings.REQUEST_SCHEDULE_EXACT_ALARM;end`;
-            const link = document.createElement('a');
-            link.href = intentUrl;
-            link.target = '_top';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-        } else {
-          alert('設定失敗：' + (err.message || err));
-        }
-      }
-    } else {
-      // Fallback for browser/non-capacitor environment
-      alert('此功能需要在 App 中使用。');
-    }
+    const targetDate = new Date(isoDate);
+    const month = targetDate.getMonth() + 1;
+    const day = targetDate.getDate();
+    const msg = encodeURIComponent(`${title} (${month}/${day})`);
+    
+    // Open phone's built-in Clock app with time pre-filled
+    // User needs to manually select the date using the calendar icon in the Clock app
+    const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};B.android.intent.extra.alarm.SKIP_UI=false;end`;
+    
+    setClickedAlarms(prev => ({ ...prev, [index]: true }));
+    
+    const link = document.createElement('a');
+    link.href = intentUrl;
+    link.target = '_top';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const toggleComplete = (e) => {
