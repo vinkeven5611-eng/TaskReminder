@@ -81,6 +81,14 @@ export const taskAPI = {
     });
     if (!res.ok) throw new Error('Failed to update notify status');
     return res.json();
+  },
+  getTaskAlarms: async (id) => {
+    const res = await fetch(`${BASE_URL}/tasks/${id}/alarm-times`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch alarm times');
+    return res.json();
   }
 };
 

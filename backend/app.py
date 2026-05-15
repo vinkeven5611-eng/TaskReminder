@@ -1,6 +1,7 @@
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+import zoneinfo
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, request, jsonify
@@ -576,6 +577,77 @@ def notify_status(task_id):
         
     db.session.commit()
     return jsonify({'message': 'Notify status updated'}), 200
+
+@app.route('/api/tasks/<int:task_id>/alarm-times', methods=['GET'])
+@jwt_required()
+def get_task_alarm_times(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    
+    if not task:
+        return jsonify({'message': 'Task not found'}), 404
+        
+    user = User.query.get(user_id)
+    if not user.is_calendar_enabled or not user.google_refresh_token_encrypted or not task.google_event_id:
+        return jsonify({'alarms': []}), 200
+        
+    try:
+        refresh_token = calendar_sync.decrypt_token(user.google_refresh_token_encrypted)
+        service = calendar_sync.get_calendar_service(refresh_token)
+        event = service.events().get(calendarId='primary', eventId=task.google_event_id).execute()
+        
+        reminders = event.get('reminders', {})
+        reminder_list = []
+        if reminders.get('useDefault'):
+            calendar_list_entry = service.calendarList().get(calendarId='primary').execute()
+            reminder_list = calendar_list_entry.get('defaultReminders', [])
+        else:
+            reminder_list = reminders.get('overrides', [])
+            
+        alarms = []
+        taipei_tz = zoneinfo.ZoneInfo('Asia/Taipei')
+        
+        start = event.get('start', {})
+        start_time_str = start.get('dateTime') or start.get('date')
+        if not start_time_str:
+            return jsonify({'alarms': []}), 200
+            
+        if 'T' in start_time_str:
+            event_start_dt = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+        else:
+            event_start_dt = datetime.fromisoformat(start_time_str)
+            event_start_dt = event_start_dt.replace(tzinfo=timezone.utc)
+            
+        event_start_tw = event_start_dt.astimezone(taipei_tz)
+        
+        for r in reminder_list:
+            if r.get('method') in ['popup', 'email', 'sms']:
+                minutes = r.get('minutes', 0)
+                alarm_time = event_start_tw - timedelta(minutes=minutes)
+                
+                if minutes >= 60 * 24:
+                    days = minutes // (60 * 24)
+                    display_text = f"前 {days} 天"
+                elif minutes >= 60:
+                    hours = minutes // 60
+                    display_text = f"前 {hours} 小時"
+                else:
+                    display_text = f"前 {minutes} 分鐘"
+                    
+                alarms.append({
+                    'display_text': display_text,
+                    'hour': alarm_time.hour,
+                    'minute': alarm_time.minute
+                })
+                
+        return jsonify({
+            'task_title': task.content,
+            'alarms': alarms
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch alarm times: {e}")
+        return jsonify({'message': str(e)}), 500
 
 @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
 @jwt_required()

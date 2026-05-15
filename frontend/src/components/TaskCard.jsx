@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Check, Clock, Settings, LogOut } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Check, Clock, Settings, LogOut, AlarmClock, Loader2, X } from 'lucide-react';
+import { taskAPI } from '../services/api';
 
 export default function TaskCard({ task, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -15,6 +16,60 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const [editDueDate, setEditDueDate] = useState(formatForInput(task.due_date));
   
   const isOverdue = !task.is_completed && task.due_date && new Date(task.due_date) < new Date();
+  
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const [showAlarms, setShowAlarms] = useState(false);
+  const [alarms, setAlarms] = useState([]);
+  const [loadingAlarms, setLoadingAlarms] = useState(false);
+  const [clickedAlarms, setClickedAlarms] = useState({});
+  const popoverRef = useRef(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setShowAlarms(false);
+      }
+    };
+    if (showAlarms) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAlarms]);
+
+  const handleAlarmClick = async (e) => {
+    e.stopPropagation();
+    setShowAlarms(true);
+    if (alarms.length > 0) return;
+    
+    setLoadingAlarms(true);
+    try {
+      const data = await taskAPI.getTaskAlarms(task.id);
+      setAlarms(data.alarms || []);
+    } catch (err) {
+      console.error(err);
+      setAlarms([]);
+    } finally {
+      setLoadingAlarms(false);
+    }
+  };
+
+  const triggerAndroidAlarm = (e, index, hour, minute, title) => {
+    e.stopPropagation();
+    const baseUrl = "intent:#Intent;";
+    const action = "action=android.intent.action.SET_ALARM;";
+    const params = [
+      `i;android.intent.extra.alarm.HOUR=${hour};`,
+      `i;android.intent.extra.alarm.MINUTES=${minute};`,
+      `S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(title)};`,
+      `b.android.intent.extra.alarm.SKIP_UI=false;`
+    ].join("");
+    const suffix = "end";
+    
+    const fullIntentUrl = `${baseUrl}${action}${params}${suffix}`;
+    
+    setClickedAlarms(prev => ({ ...prev, [index]: true }));
+    window.location.href = fullIntentUrl;
+  };
 
   const toggleComplete = (e) => {
     e.stopPropagation();
@@ -86,7 +141,47 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         )}
       </div>
 
-      <div className="task-actions">
+      <div className="task-actions" style={{ position: 'relative' }}>
+        {isAndroid && task.due_date && !task.is_completed && (
+          <>
+            <button className="icon-btn alarm-btn" onClick={handleAlarmClick} title="設定鬧鐘" style={{ color: '#fbbf24', position: 'relative' }}>
+              <AlarmClock size={18} />
+              <span className="alarm-glow"></span>
+            </button>
+            
+            {showAlarms && (
+              <div ref={popoverRef} className="alarm-popover fade-in" onClick={e => e.stopPropagation()}>
+                <div className="popover-header">
+                  <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>設定系統鬧鐘</span>
+                  <X size={16} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAlarms(false)} />
+                </div>
+                <div className="popover-body">
+                  {loadingAlarms ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', color: 'var(--primary)' }}>
+                      <Loader2 size={20} className="animate-spin" />
+                    </div>
+                  ) : alarms.length > 0 ? (
+                    alarms.map((alarm, idx) => (
+                      <button 
+                        key={idx} 
+                        className={`alarm-item-btn ${clickedAlarms[idx] ? 'clicked' : ''}`}
+                        onClick={(e) => triggerAndroidAlarm(e, idx, alarm.hour, alarm.minute, task.content)}
+                        disabled={clickedAlarms[idx]}
+                      >
+                        <AlarmClock size={14} />
+                        <span>{clickedAlarms[idx] ? '已跳轉' : `${alarm.display_text} (${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')})`}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      Google 日曆未設定提醒
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
         <button className="icon-btn" onClick={handleEdit} title="編輯">
           <Settings size={18} />
         </button>
