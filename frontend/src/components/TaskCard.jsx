@@ -57,13 +57,14 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     e.stopPropagation();
     
     const targetDate = new Date(isoDate);
-    const month = targetDate.getMonth() + 1;
-    const day = targetDate.getDate();
-    const msg = encodeURIComponent(`${title} (${month}/${day})`);
+    const msg = encodeURIComponent(title);
     
-    // Open phone's built-in Clock app with time pre-filled
-    // User needs to manually select the date using the calendar icon in the Clock app
-    const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};B.android.intent.extra.alarm.SKIP_UI=false;end`;
+    // JS getDay(): 0=Sun,1=Mon,...,6=Sat
+    // Android AlarmClock.EXTRA_DAYS: 1=Sun,2=Mon,...,7=Sat
+    const androidDay = targetDate.getDay() + 1;
+    
+    // Open built-in Clock app with time + day-of-week pre-filled
+    const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};i.android.intent.extra.alarm.DAYS=${androidDay};B.android.intent.extra.alarm.SKIP_UI=false;end`;
     
     setClickedAlarms(prev => ({ ...prev, [index]: true }));
     
@@ -74,6 +75,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     link.click();
     document.body.removeChild(link);
   };
+
 
   const toggleComplete = (e) => {
     e.stopPropagation();
