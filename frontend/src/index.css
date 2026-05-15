@@ -15,8 +15,8 @@
   --danger-hover: #f87171;
   --danger-glow: rgba(239, 68, 68, 0.2);
   
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(255, 255, 255, 0.15);
+  --border-color: rgba(255, 255, 255, 0.35);
+  --border-active: rgba(255, 255, 255, 0.55);
   --radius: 14px;
   --font-family: 'Inter', -apple-system, sans-serif;
 }
@@ -442,11 +442,12 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   background: rgba(30,41,59,0.3);
   padding: 0.25rem;
   border-radius: 12px;
-  width: max-content;
+  width: 100%;
   border: 1px solid var(--border-color);
 }
 
 .filter-btn {
+  flex: 1;
   background: transparent;
   color: var(--text-muted);
   box-shadow: none;
@@ -774,11 +775,11 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   
   .dashboard-header div:last-child {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
   }
   
   .cta-banner {
-    margin: 0 1.5rem 1.5rem;
+    margin: 0 0 1.5rem;
   }
   
   .chat-input-bar {
@@ -800,13 +801,12 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   }
   
   .filters {
-    margin: 0 1rem 1.5rem;
-    width: auto;
-    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    width: 100%;
   }
 
   .task-list {
-    padding: 0 1rem;
+    padding: 0;
   }
 
   .task-card {
