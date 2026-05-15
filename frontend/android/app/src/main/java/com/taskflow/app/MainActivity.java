@@ -28,6 +28,16 @@ public class MainActivity extends BridgeActivity {
                     try {
                         Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
                         if (intent != null) {
+                            // Fix EXTRA_DAYS: convert int to ArrayList<Integer> for SET_ALARM
+                            if ("android.intent.action.SET_ALARM".equals(intent.getAction())) {
+                                int dayInt = intent.getIntExtra("android.intent.extra.alarm.DAYS", -1);
+                                if (dayInt != -1) {
+                                    intent.removeExtra("android.intent.extra.alarm.DAYS");
+                                    ArrayList<Integer> days = new ArrayList<>();
+                                    days.add(dayInt);
+                                    intent.putIntegerArrayListExtra("android.intent.extra.alarm.DAYS", days);
+                                }
+                            }
                             startActivity(intent);
                             return true;
                         }
@@ -40,3 +50,4 @@ public class MainActivity extends BridgeActivity {
         });
     }
 }
+
