@@ -53,18 +53,21 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     }
   };
 
-  const triggerAndroidAlarm = (e, index, hour, minute, title) => {
+  const triggerAndroidAlarm = (e, index, hour, minute, title, isoDate) => {
     e.stopPropagation();
     
-    const action = "android.intent.action.SET_ALARM";
+    // Convert to target timestamp (milliseconds) for Calendar support
+    const targetDate = new Date(isoDate);
+    const beginTime = targetDate.getTime();
+    const endTime = beginTime + (15 * 60 * 1000); // 15 minutes duration
+    
     const msg = encodeURIComponent(title);
     
-    // Using standard Android Intent URI scheme
-    const intentUrl = `intent:#Intent;action=${action};i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};end`;
+    // Use Calendar Intent which supports Year/Month/Day
+    const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/event;S.title=${msg};l.beginTime=${beginTime};l.endTime=${endTime};end`;
     
     setClickedAlarms(prev => ({ ...prev, [index]: true }));
     
-    // Safest way to trigger Deep Links in React SPAs
     const link = document.createElement('a');
     link.href = intentUrl;
     link.target = '_top';
@@ -167,7 +170,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                       <button 
                         key={idx} 
                         className={`alarm-item-btn ${clickedAlarms[idx] ? 'clicked' : ''}`}
-                        onClick={(e) => triggerAndroidAlarm(e, idx, alarm.hour, alarm.minute, task.content)}
+                        onClick={(e) => triggerAndroidAlarm(e, idx, alarm.hour, alarm.minute, task.content, alarm.iso_date)}
                         disabled={clickedAlarms[idx]}
                       >
                         <AlarmClock size={14} />

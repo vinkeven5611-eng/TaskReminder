@@ -640,7 +640,8 @@ def get_task_alarm_times(task_id):
                 alarms.append({
                     'display_text': display_text,
                     'hour': alarm_time.hour,
-                    'minute': alarm_time.minute
+                    'minute': alarm_time.minute,
+                    'iso_date': alarm_time.isoformat()
                 })
                 
         return jsonify({
