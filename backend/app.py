@@ -42,6 +42,7 @@ CORS(app,
     origins=[
         "http://localhost:5173",
         "http://localhost",
+        "https://localhost",
         "capacitor://localhost",
         "https://task-reminder-omega-five.vercel.app",
         "https://task-rminder-omega-five.vercel.app",
