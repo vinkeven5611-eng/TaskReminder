@@ -55,20 +55,22 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
   const triggerAndroidAlarm = (e, index, hour, minute, title) => {
     e.stopPropagation();
-    const baseUrl = "intent:#Intent;";
-    const action = "action=android.intent.action.SET_ALARM;";
-    const params = [
-      `i.android.intent.extra.alarm.HOUR=${hour};`,
-      `i.android.intent.extra.alarm.MINUTES=${minute};`,
-      `S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(title)};`,
-      `b.android.intent.extra.alarm.SKIP_UI=false;`
-    ].join("");
-    const suffix = "end";
     
-    const fullIntentUrl = `${baseUrl}${action}${params}${suffix}`;
+    const action = "android.intent.action.SET_ALARM";
+    const msg = encodeURIComponent(title);
+    
+    // Using standard Android Intent URI scheme
+    const intentUrl = `intent:#Intent;action=${action};i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};end`;
     
     setClickedAlarms(prev => ({ ...prev, [index]: true }));
-    window.location.href = fullIntentUrl;
+    
+    // Safest way to trigger Deep Links in React SPAs
+    const link = document.createElement('a');
+    link.href = intentUrl;
+    link.target = '_top';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const toggleComplete = (e) => {
