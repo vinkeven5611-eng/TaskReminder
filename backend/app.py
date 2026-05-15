@@ -41,6 +41,8 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 CORS(app, 
     origins=[
         "http://localhost:5173",
+        "http://localhost",
+        "capacitor://localhost",
         "https://task-reminder-omega-five.vercel.app",
         "https://task-rminder-omega-five.vercel.app",
         r"https://task-reminder-.*\.vercel\.app"
