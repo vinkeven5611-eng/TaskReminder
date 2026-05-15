@@ -3,15 +3,18 @@ package com.taskflow.app;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
+import java.util.ArrayList;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Register native plugins before super.onCreate
+        registerPlugin(AlarmPlugin.class);
+        
         super.onCreate(savedInstanceState);
         
         // Custom WebViewClient to handle intent:// schemes
