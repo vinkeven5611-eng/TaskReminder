@@ -14,6 +14,17 @@ export default function Auth({ setAuth }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [stats, setStats] = useState({ daily: 0, total: 0 });
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remember_email');
+    const savedPassword = localStorage.getItem('remember_password');
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   useEffect(() => {
     statsAPI.getStats()
@@ -38,6 +49,13 @@ export default function Auth({ setAuth }) {
       }
       
       if (data.status === 'success') {
+        if (rememberMe) {
+          localStorage.setItem('remember_email', email);
+          localStorage.setItem('remember_password', password);
+        } else {
+          localStorage.removeItem('remember_email');
+          localStorage.removeItem('remember_password');
+        }
         localStorage.setItem('taskflow_token', data.token);
         localStorage.setItem('taskflow_username', data.username);
         setAuth(true);
@@ -156,6 +174,26 @@ export default function Auth({ setAuth }) {
                   </button>
                 </div>
               )}
+              
+              {isLogin && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', cursor: 'pointer' }} onClick={() => setRememberMe(!rememberMe)}>
+                  <div style={{ 
+                    width: '18px', 
+                    height: '18px', 
+                    borderRadius: '4px', 
+                    border: '1px solid var(--border-active)',
+                    background: rememberMe ? 'var(--primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}>
+                    {rememberMe && <div style={{ width: '8px', height: '8px', background: '#fff', borderRadius: '1px' }}></div>}
+                  </div>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>記住帳號密碼</span>
+                </div>
+              )}
+
               <button type="submit" disabled={loading}>
                 {loading ? '處理中...' : (
                   <>
