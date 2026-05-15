@@ -56,12 +56,17 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const triggerAndroidAlarm = (e, index, hour, minute, title, isoDate) => {
     e.stopPropagation();
     
-    // Format the target date for the alarm label
-    const targetDate = new Date(isoDate);
-    const dateStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()}`;
+    const alarmTime = new Date(isoDate);
+    const now = new Date();
+    
+    // Check if alarm is more than 24 hours in the future
+    if (alarmTime.getTime() > now.getTime() + (24 * 60 * 60 * 1000)) {
+        alert('❌ 系統限制：Android 的「鬧鐘 App」不支援設定明天以後的日期。\n\n這會導致鬧鐘在「明天」提早誤響。請在這個任務的「前一天」或「當天」再來點擊此按鈕設定鬧鐘！');
+        return;
+    }
     
     const action = "android.intent.action.SET_ALARM";
-    const msg = encodeURIComponent(`${title} (${dateStr})`);
+    const msg = encodeURIComponent(title);
     
     // Revert to standard Android Alarm Intent (One-off, closest time)
     const intentUrl = `intent:#Intent;action=${action};i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};end`;
