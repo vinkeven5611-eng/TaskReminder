@@ -427,6 +427,28 @@ export default function Dashboard({ setAuth }) {
               )}
             </div>
             
+            {/* App Update Section (Visible on all Android devices) */}
+            {(window.Capacitor || /Android/i.test(navigator.userAgent)) && (
+              <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <Inbox size={20} style={{ color: '#fbbf24' }} />
+                  <h4 style={{ margin: 0 }}>軟體更新</h4>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', borderRadius: '8px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                     <span style={{ fontSize: '0.85rem', color: '#fbbf24', fontWeight: '500' }}>發現新功能？</span>
+                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>點擊按鈕下載最新版 APK</span>
+                   </div>
+                   <button 
+                     onClick={() => window.open('https://task-reminder-omega-five.vercel.app/TaskFlow.apk', '_blank')}
+                     style={{ padding: '0.5rem 1rem', background: '#fbbf24', color: '#000', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }}
+                   >
+                     立即更新
+                   </button>
+                </div>
+              </div>
+            )}
+            
             <button 
               onClick={() => setShowSettings(false)}
               style={{ marginTop: '2rem', width: '100%', padding: '0.75rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '8px' }}
