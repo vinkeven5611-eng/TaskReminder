@@ -1,5 +1,5 @@
 {
-  "appId": "com.taskflow.app",
+  "appId": "com.vinkeven.taskreminder",
   "appName": "TaskReminder",
   "webDir": "dist",
   "server": {
