@@ -211,11 +211,13 @@ export default function Auth({ setAuth }) {
               </span>
             </div>
             
-            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-              <a href="/TaskFlow.apk" download className="download-app-btn">
-                📱 下載 Android 專屬 App
-              </a>
-            </div>
+            {!window.Capacitor && (
+              <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                <a href="/TaskFlow.apk" download className="download-app-btn">
+                  📱 下載 Android 專屬 App
+                </a>
+              </div>
+            )}
           </div>
         )}
 

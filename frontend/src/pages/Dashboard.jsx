@@ -334,100 +334,76 @@ export default function Dashboard({ setAuth }) {
               <Settings size={24} /> 系統設定與整合
             </h3>
             
-            <div className="setting-card" style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                <Calendar size={24} style={{ color: '#4285F4' }} />
-                <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Google 日曆雙向同步</h4>
-              </div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-                將您的任務自動同步到 Google 日曆，並在日曆上修改時自動更新回 TaskReminder。
-              </p>
-              
-              {!googleStatus.is_linked ? (
-                <button 
-                  onClick={handleLinkGoogle}
-                  disabled={isLinking}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', background: '#fff', color: '#3c4043', padding: '0.75rem', borderRadius: '8px', border: '1px solid #dadce0', fontWeight: '500', fontSize: '0.95rem' }}
-                >
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style={{ width: '18px', height: '18px' }} />
-                  {isLinking ? '連結中...' : '使用 Google 帳號連結'}
-                </button>
-              ) : (
-                <div className="google-settings">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <span style={{ fontWeight: '500' }}>啟用自動同步</span>
-                      {googleStatus.google_email && (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>帳號: {googleStatus.google_email}</span>
-                      )}
+            <div className="settings-scroll-area" style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: '8px', margin: '0 -8px' }}>
+              <div style={{ padding: '0 8px' }}>
+                <div className="setting-card" style={{ background: 'rgba(255,255,255,0.05)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(66, 133, 244, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={20} style={{ color: '#4285F4' }} />
                     </div>
-                    <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={googleStatus.is_calendar_enabled} 
-                        onChange={handleToggleSync} 
-                        style={{ opacity: 0, width: 0, height: 0 }}
-                      />
-                      <span className="slider" style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: googleStatus.is_calendar_enabled ? '#10b981' : '#475569', transition: '.4s', borderRadius: '24px' }}>
-                        <span style={{ position: 'absolute', height: '18px', width: '18px', left: googleStatus.is_calendar_enabled ? '26px' : '3px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }}></span>
-                      </span>
-                    </label>
+                    <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Google 日曆雙向同步</h4>
                   </div>
                   
-                  {/* Sync Log Area */}
-                  {googleStatus.is_calendar_enabled && (
-                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>
-                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
-                            即時連線中
-                          </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                    將您的任務自動同步到 Google 日曆，並在日曆上修改時自動更新回 TaskReminder。
+                  </p>
+                  
+                  {!googleStatus.is_linked ? (
+                    <button 
+                      onClick={handleLinkGoogle}
+                      disabled={isLinking}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', background: '#fff', color: '#3c4043', padding: '0.75rem', borderRadius: '8px', border: '1px solid #dadce0', fontWeight: '500', fontSize: '0.9rem' }}
+                    >
+                      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style={{ width: '16px', height: '16px' }} />
+                      {isLinking ? '連結中...' : '使用 Google 帳號連結'}
+                    </button>
+                  ) : (
+                    <div className="google-settings">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0.85rem', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                          <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>自動同步已啟用</span>
                           {googleStatus.google_email && (
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', paddingLeft: '1.3rem' }}>
-                              {googleStatus.google_email}
-                            </div>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{googleStatus.google_email}</span>
                           )}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          上次同步：{lastSyncTime ? lastSyncTime : '剛剛'}
-                        </div>
+                        <label className="toggle-switch" style={{ flexShrink: 0 }}>
+                          <input type="checkbox" checked={googleStatus.is_calendar_enabled} onChange={handleToggleSync} />
+                          <span className="slider"></span>
+                        </label>
                       </div>
                       
-                      {/* Detailed History */}
-                      {syncHistory.length > 0 && (
-                        <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', marginBottom: '0.75rem' }}>
-                          {syncHistory.map((log, i) => (
-                            <div key={i} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: i === syncHistory.length - 1 ? 0 : '0.3rem', borderBottom: i === syncHistory.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)', paddingBottom: i === syncHistory.length - 1 ? 0 : '0.3rem' }}>
-                              {log}
+                      {googleStatus.is_calendar_enabled && (
+                        <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '10px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '600' }}>
+                              <span className="status-dot pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
+                              即時連線中
                             </div>
-                          ))}
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.25rem' }}>
+                              上次同步：{lastSyncTime ? lastSyncTime : '剛剛'}
+                            </div>
+                          </div>
+
+                          <button 
+                            onClick={handleManualSync}
+                            disabled={isSyncing}
+                            style={{ width: '100%', padding: '0.6rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '500' }}
+                          >
+                            {isSyncing ? '🔄 同步中...' : '🔄 立即檢查變更'}
+                          </button>
                         </div>
                       )}
 
-                      <button 
-                        onClick={handleManualSync}
-                        disabled={isSyncing}
-                        style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: '0.2s' }}
-                        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                      >
-                        {isSyncing ? '🔄 同步中...' : '🔄 立即檢查變更'}
+                      <button onClick={handleUnlinkGoogle} style={{ marginTop: '1.5rem', width: '100%', padding: '0.6rem', background: 'transparent', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                        解除 Google 連結
                       </button>
                     </div>
                   )}
-
-                  <button 
-                    onClick={handleUnlinkGoogle}
-                    style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', fontWeight: '500' }}
-                  >
-                    <Unlink size={16} /> 解除連結
-                  </button>
                 </div>
-              )}
+              </div>
             </div>
             
-            {/* App Update Section (Visible on all Android devices) */}
+            {/* App Update Section */}
             {(window.Capacitor || /Android/i.test(navigator.userAgent)) && (
               <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
