@@ -28,7 +28,17 @@ graph TD
     Android -- Native Bridge --> Clock[Android System Clock]
 ```
 
+### 架構組件說明
+*   **前端層 (Frontend)**：採用 React 18 建置並託管於 Vercel。負責使用者介面互動、狀態管理及 OAuth 授權流程的發起。
+*   **後端層 (Backend)**：使用 Flask 實作 RESTful API 並託管於 Render。整合 APScheduler 執行後台任務掃描，並處理核心業務邏輯。
+*   **資料層 (Persistence)**：使用 Render 託管的 PostgreSQL 資料庫，儲存使用者資料、任務清單及經 AES 加密後的第三方授權權杖。
+*   **整合層 (Integrations)**：
+    *   **Google OAuth & Calendar**：實現跨平台的事件同步與身分驗證。
+    *   **Brevo API**：作為雲端發信網關，解決標準 SMTP 於免費雲端環境受限的問題，負責 2FA 驗證碼與任務提醒信件。
+*   **原生層 (Native Layer)**：Android App 以 Capacitor 為核心，並透過自定義的 Java Bridge 實作與系統底層鬧鐘引擎的直接通訊。
+
 ---
+
 
 ## 🚀 核心技術亮點
 
