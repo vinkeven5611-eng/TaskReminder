@@ -233,15 +233,32 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
 }
 
 .auth-switch span {
-  color: #fff;
-  font-weight: 500;
+  color: var(--primary);
   cursor: pointer;
-  margin-left: 0.5rem;
-  transition: all 0.2s;
+  font-weight: 500;
+}
+.auth-switch span:hover {
+  text-decoration: underline;
 }
 
-.auth-switch span:hover {
-  text-shadow: 0 0 12px rgba(255,255,255,0.5);
+.download-app-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+.download-app-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
 }
 
 .error-msg {
