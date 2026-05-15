@@ -56,15 +56,15 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const triggerAndroidAlarm = (e, index, hour, minute, title, isoDate) => {
     e.stopPropagation();
     
-    // Convert to target timestamp (milliseconds) for Calendar support
+    // Format the target date for the alarm label
     const targetDate = new Date(isoDate);
-    const beginTime = targetDate.getTime();
-    const endTime = beginTime + (15 * 60 * 1000); // 15 minutes duration
+    const dateStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()}`;
     
-    const msg = encodeURIComponent(title);
+    const action = "android.intent.action.SET_ALARM";
+    const msg = encodeURIComponent(`${title} (${dateStr})`);
     
-    // Use Calendar Intent which supports Year/Month/Day
-    const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/event;S.title=${msg};l.beginTime=${beginTime};l.endTime=${endTime};end`;
+    // Revert to standard Android Alarm Intent (One-off, closest time)
+    const intentUrl = `intent:#Intent;action=${action};i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};end`;
     
     setClickedAlarms(prev => ({ ...prev, [index]: true }));
     
