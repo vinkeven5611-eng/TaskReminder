@@ -58,8 +58,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     const baseUrl = "intent:#Intent;";
     const action = "action=android.intent.action.SET_ALARM;";
     const params = [
-      `i;android.intent.extra.alarm.HOUR=${hour};`,
-      `i;android.intent.extra.alarm.MINUTES=${minute};`,
+      `i.android.intent.extra.alarm.HOUR=${hour};`,
+      `i.android.intent.extra.alarm.MINUTES=${minute};`,
       `S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(title)};`,
       `b.android.intent.extra.alarm.SKIP_UI=false;`
     ].join("");

@@ -480,7 +480,7 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   backdrop-filter: blur(12px);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  overflow: hidden;
+  /* Removed overflow: hidden so the popover isn't cut off */
 }
 
 .task-card::before {
@@ -491,6 +491,8 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   background: var(--primary);
   opacity: 1; /* Restore permanent visibility */
   transition: opacity 0.3s;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
 }
 
 .task-card:hover {
