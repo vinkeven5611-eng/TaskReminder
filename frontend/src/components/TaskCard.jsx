@@ -72,15 +72,18 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         title: content
       }).then((result) => {
         // Save to localStorage so it appears in the "Alarm List" modal
-        const scheduledAlarms = JSON.parse(localStorage.getItem('scheduled_alarms') || '[]');
-        scheduledAlarms.push({
-          id: result.requestCode || Date.now(),
+        const STORAGE_KEY = 'taskflow_alarms';
+        const alarms = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        alarms.push({
+          requestCode: result.requestCode,
           title: content,
-          time: timestamp
+          timestamp: timestamp,
+          id: Date.now()
         });
-        localStorage.setItem('scheduled_alarms', JSON.stringify(scheduledAlarms));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
         
         setClickedAlarms(prev => ({ ...prev, [index]: true }));
+
       }).catch(err => {
         alert("設定鬧鐘失敗: " + err.message);
       });
