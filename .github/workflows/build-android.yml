@@ -34,8 +34,10 @@ jobs:
             echo "Error: ANDROID_KEYSTORE_BASE64 secret is not set!"
             exit 1
           fi
-          mkdir -p ~/.android
-          echo "$KEYSTORE_BASE64" | base64 --decode > ~/.android/debug.keystore
+          # Filter out any potential whitespace or markers to be extra safe
+          CLEAN_BASE64=$(echo "$KEYSTORE_BASE64" | tr -d '[:space:]' | sed 's/====BASE64_START====//g' | sed 's/====BASE64_END====//g')
+          echo "$CLEAN_BASE64" | base64 --decode > ~/.android/debug.keystore
+
 
 
       - name: Create Environment Variables
