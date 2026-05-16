@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Check, Clock, Settings, LogOut, AlarmClock, Loader2, X } from 'lucide-react';
+import { Check, Clock, Settings, Trash2, AlarmClock, Loader2, X } from 'lucide-react';
 import { taskAPI } from '../services/api';
 
 export default function TaskCard({ task, onUpdate, onDelete }) {
@@ -206,8 +206,9 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           <Settings size={18} />
         </button>
         <button className="icon-btn delete" onClick={handleDelete} title="刪除">
-          <LogOut size={18} style={{ transform: 'rotate(90deg)' }} />
+          <Trash2 size={18} />
         </button>
+
       </div>
     </div>
   );

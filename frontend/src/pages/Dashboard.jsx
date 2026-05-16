@@ -3,7 +3,8 @@ import { useEffect, useState, useRef } from 'react';
 import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
 import AlarmListModal from '../components/AlarmListModal';
-import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink, Bell } from 'lucide-react';
+import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink, Bell, Trash2 } from 'lucide-react';
+
 
 export default function Dashboard({ setAuth }) {
   const [tasks, setTasks] = useState([]);
@@ -624,7 +625,7 @@ export default function Dashboard({ setAuth }) {
               margin: '0 auto 1.5rem',
               color: (confirmData.type === 'delete' || confirmData.type === 'logout') ? 'var(--danger)' : 'var(--primary)'
             }}>
-              {confirmData.type === 'logout' ? <LogOut size={30} /> : (confirmData.type === 'delete' ? <LogOut size={30} style={{ transform: 'rotate(90deg)' }} /> : <CheckSquare size={30} />)}
+               {confirmData.type === 'logout' ? <LogOut size={30} /> : (confirmData.type === 'delete' ? <Trash2 size={30} /> : <CheckSquare size={30} />)}
             </div>
             <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>
               {confirmData.type === 'logout' ? '登出帳號' : (confirmData.type === 'delete' ? '確認刪除' : '確認操作')}
