@@ -61,20 +61,35 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
   const triggerAndroidAlarm = (e, index, hour, minute, content, iso_date) => {
     e.stopPropagation();
-    if (window.Capacitor && window.Capacitor.Plugins.AlarmPlugin) {
+    
+    // Check if we are truly inside Capacitor/App environment
+    const isCapacitor = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AlarmPlugin);
+
+    if (isCapacitor) {
       const timestamp = new Date(iso_date).getTime();
       window.Capacitor.Plugins.AlarmPlugin.setAlarm({
         timestamp: timestamp,
         title: content
-      }).then(() => {
+      }).then((result) => {
+        // Save to localStorage so it appears in the "Alarm List" modal
+        const scheduledAlarms = JSON.parse(localStorage.getItem('scheduled_alarms') || '[]');
+        scheduledAlarms.push({
+          id: result.requestCode || Date.now(),
+          title: content,
+          time: timestamp
+        });
+        localStorage.setItem('scheduled_alarms', JSON.stringify(scheduledAlarms));
+        
         setClickedAlarms(prev => ({ ...prev, [index]: true }));
       }).catch(err => {
         alert("設定鬧鐘失敗: " + err.message);
       });
     } else {
-      alert("鬧鐘功能僅支援 Android 版本");
+      // Clearer message for users in web browser
+      alert("⚠️ 此功能需要安裝並使用『安卓 App 版』\n目前您正處於網頁模式，瀏覽器無法存取系統鬧鐘。");
     }
   };
+
 
   const toggleComplete = (e) => {
     e.stopPropagation();

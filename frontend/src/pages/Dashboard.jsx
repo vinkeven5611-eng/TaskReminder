@@ -24,7 +24,8 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "2.7"; // Must match build.gradle and version.json
+  const CURRENT_VERSION = "2.8"; // Final Stable Version
+
   const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
   const callbackHandled = useRef(false);
 
@@ -163,6 +164,36 @@ export default function Dashboard({ setAuth }) {
       
       if (data.version !== CURRENT_VERSION) {
         if (window.confirm(`發現新版本 ${data.version}！\n確定要下載並自動安裝嗎？`)) {
+          const triggerAndroidAlarm = (e, index, hour, minute, content, iso_date) => {
+            e.stopPropagation();
+            
+            // Check if we are truly inside Capacitor/App environment
+            const isCapacitor = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AlarmPlugin);
+        
+            if (isCapacitor) {
+              const timestamp = new Date(iso_date).getTime();
+              window.Capacitor.Plugins.AlarmPlugin.setAlarm({
+                timestamp: timestamp,
+                title: content
+              }).then((result) => {
+                // Save to localStorage so it appears in the "Alarm List" modal
+                const scheduledAlarms = JSON.parse(localStorage.getItem('scheduled_alarms') || '[]');
+                scheduledAlarms.push({
+                  id: result.requestCode || Date.now(),
+                  title: content,
+                  time: timestamp
+                });
+                localStorage.setItem('scheduled_alarms', JSON.stringify(scheduledAlarms));
+                
+                setClickedAlarms(prev => ({ ...prev, [index]: true }));
+              }).catch(err => {
+                alert("設定鬧鐘失敗: " + err.message);
+              });
+            } else {
+              // Clearer message for users in web browser
+              alert("⚠️ 此功能需要安裝並使用『安卓 App 版』\n目前您正處於網頁模式，瀏覽器無法存取系統鬧鐘。");
+            }
+          };
           const apkUrl = 'https://task-reminder-omega-five.vercel.app/TaskFlow.apk';
           if (window.Capacitor?.Plugins?.AlarmPlugin) {
             await window.Capacitor.Plugins.AlarmPlugin.installApk({ url: apkUrl });
