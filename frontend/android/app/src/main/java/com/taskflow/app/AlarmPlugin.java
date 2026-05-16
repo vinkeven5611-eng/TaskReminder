@@ -120,7 +120,7 @@ public class AlarmPlugin extends Plugin {
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
         
         String fileName = "TaskFlow_Update.apk";
-        String CURRENT_VERSION = "3.3";
+
         // Use App's private external files directory to avoid permission issues and path blocks
         File destinationFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName);
         if (destinationFile.exists()) {
