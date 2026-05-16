@@ -49,12 +49,19 @@ public class AlarmReceiver extends BroadcastReceiver {
         Intent dismissIntent = new Intent(context, AlarmReceiver.class);
         dismissIntent.setAction(ACTION_DISMISS);
         dismissIntent.putExtra("notifId", currentNotifId);
+        
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
+        }
+
         PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(
             context, 
             currentNotifId, 
             dismissIntent, 
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            flags
         );
+
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)

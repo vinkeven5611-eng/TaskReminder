@@ -40,12 +40,18 @@ public class AlarmPlugin extends Plugin {
 
         int requestCode = (int) (timestamp % Integer.MAX_VALUE);
 
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
+        }
+
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            flags
         );
+
 
         // Check for exact alarm permission on Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -79,14 +85,21 @@ public class AlarmPlugin extends Plugin {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
         Intent intent = new Intent(context, AlarmReceiver.class);
+        
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
+        }
+
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            flags
         );
 
         alarmManager.cancel(pendingIntent);
+
         pendingIntent.cancel();
 
         JSObject ret = new JSObject();
@@ -133,11 +146,12 @@ public class AlarmPlugin extends Plugin {
             }
         };
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
+        if (Build.VERSION.SDK_INT >= 33) { // TIRAMISU
+            context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), 2); // Context.RECEIVER_EXPORTED = 2
         } else {
             context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         }
+
 
         call.resolve();
     }
