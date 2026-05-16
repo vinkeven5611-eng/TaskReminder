@@ -166,8 +166,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           <>
             <button className="icon-btn alarm-btn" onClick={handleAlarmClick} title="設定鬧鐘" style={{ color: '#fbbf24', position: 'relative' }}>
               <AlarmClock size={18} />
-              <span className="alarm-glow"></span>
             </button>
+
             
             {showAlarms && (
               <div ref={popoverRef} className="alarm-popover fade-in" onClick={e => e.stopPropagation()}>
