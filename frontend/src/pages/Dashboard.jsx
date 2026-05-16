@@ -23,7 +23,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "2.5"; // Must match build.gradle and version.json
+  const CURRENT_VERSION = "2.6"; // Must match build.gradle and version.json
   const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
   const callbackHandled = useRef(false);
 
@@ -327,6 +327,28 @@ export default function Dashboard({ setAuth }) {
         <div>
           <h2>早安，{username}</h2>
           <p>今天是 {new Date().toLocaleDateString('zh-TW')}，準備好完成目標了嗎？</p>
+          {isAndroid && (
+            <button 
+              onClick={() => setShowAlarmList(true)}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                marginTop: '0.75rem',
+                background: 'rgba(167,139,250,0.1)', 
+                border: '1px solid rgba(167,139,250,0.2)',
+                borderRadius: '8px',
+                padding: '0.4rem 0.75rem',
+                color: '#a78bfa',
+                fontSize: '0.85rem',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              <Bell size={16} />
+              鬧鐘清單
+            </button>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {googleStatus.is_linked ? (
@@ -337,13 +359,7 @@ export default function Dashboard({ setAuth }) {
               </div>
             </button>
           ) : (
-            <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定">
-              <Settings size={20} />
-            </button>
-          )}
-          {isAndroid && (
-            <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(167,139,250,0.1)', color: '#a78bfa' }} onClick={() => setShowAlarmList(true)} title="鬧鐘清單">
-              <Bell size={20} />
+                <Settings size={20} />
             </button>
           )}
           <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5' }} onClick={handleLogout} title="登出">
