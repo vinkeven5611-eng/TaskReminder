@@ -48,10 +48,11 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     setShowAlarms(true);
     setLoadingAlarms(true);
     try {
-      const data = await taskAPI.getAlarms(task.id);
-      setAlarms(data || []);
+      const data = await taskAPI.getTaskAlarms(task.id);
+      setAlarms(data.alarms || []);
       setClickedAlarms({});
     } catch (err) {
+
       console.error('Failed to fetch alarms:', err);
     } finally {
       setLoadingAlarms(false);
