@@ -112,7 +112,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   };
 
   return (
-    <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
+    <div className={`task-card ${task.is_completed ? 'completed' : ''} ${showAlarms ? 'popover-open' : ''}`}>
+
       {!task.is_completed && (
         <div 
           className="custom-checkbox" 
