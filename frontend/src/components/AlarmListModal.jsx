@@ -52,40 +52,35 @@ export default function AlarmListModal({ onClose }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+      background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px'
+      padding: '0'
     }} onClick={onClose}>
       <div style={{
-        background: 'linear-gradient(135deg, rgba(30,20,60,0.98), rgba(15,10,40,0.98))',
-        border: '1px solid rgba(139,92,246,0.35)',
-        borderRadius: '20px',
-        width: '100%', maxWidth: '420px',
-        maxHeight: '75vh',
+        background: '#000',
+        width: '100%', height: '100%',
+        maxWidth: '500px',
         display: 'flex', flexDirection: 'column',
-        boxShadow: '0 25px 60px rgba(0,0,0,0.5)'
+        boxShadow: '0 0 100px rgba(99, 102, 241, 0.1)'
       }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '18px 20px 14px',
-          borderBottom: '1px solid rgba(139,92,246,0.2)'
+          padding: '40px 24px 20px',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Bell size={18} color="#a78bfa" />
-            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '16px' }}>已排定的鬧鐘</span>
-          </div>
+          <h1 style={{ color: '#fff', fontSize: '28px', fontWeight: '600', margin: 0 }}>鬧鐘清單</h1>
           <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#94a3b8', padding: '4px'
+            background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer',
+            color: '#fff', padding: '10px', borderRadius: '50%', display: 'flex'
           }}>
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         {/* List */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '12px 16px' }}>
+        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 20px' }}>
+
           {alarms.length === 0 ? (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -100,33 +95,36 @@ export default function AlarmListModal({ onClose }) {
               .map(alarm => (
                 <div key={alarm.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: 'rgba(139,92,246,0.08)',
-                  border: '1px solid rgba(139,92,246,0.18)',
-                  borderRadius: '12px', padding: '12px 14px', marginBottom: '8px'
+                  background: 'rgba(30,30,30,0.8)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: '24px', padding: '20px 24px', marginBottom: '12px'
                 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      color: '#e2e8f0', fontSize: '14px', fontWeight: 500,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                    }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                      <span style={{ color: '#fff', fontSize: '32px', fontWeight: '300', fontFamily: 'monospace' }}>
+                        {new Date(alarm.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </span>
+                      <span style={{ color: '#94a3b8', fontSize: '14px' }}>
+                        {new Date(alarm.timestamp).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}日, {new Date(alarm.timestamp).toLocaleDateString('zh-TW', { weekday: 'short' })}
+                      </span>
+                    </div>
+                    <div style={{ color: '#6366f1', fontSize: '14px', marginTop: '4px', fontWeight: '500' }}>
                       {alarm.title}
                     </div>
-                    <div style={{ color: '#a78bfa', fontSize: '12px', marginTop: '4px' }}>
-                      {formatTime(alarm.timestamp)}
-                    </div>
                   </div>
-                  <button onClick={() => handleCancel(alarm)} style={{
-                    background: 'rgba(239,68,68,0.15)',
-                    border: '1px solid rgba(239,68,68,0.3)',
-                    borderRadius: '8px', padding: '6px 10px',
-                    cursor: 'pointer', color: '#f87171',
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    fontSize: '12px', marginLeft: '10px', flexShrink: 0
-                  }}>
-                    <Trash2 size={13} />
-                    取消
-                  </button>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '16px' }}>
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={true} 
+                        onChange={() => handleCancel(alarm)} 
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
                 </div>
+
               ))
           )}
         </div>
