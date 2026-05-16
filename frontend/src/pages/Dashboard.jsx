@@ -23,7 +23,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "2.4"; // Must match build.gradle and version.json
+  const CURRENT_VERSION = "2.5"; // Must match build.gradle and version.json
   const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
   const callbackHandled = useRef(false);
 
@@ -161,12 +161,18 @@ export default function Dashboard({ setAuth }) {
       const data = await response.json();
       
       if (data.version !== CURRENT_VERSION) {
-        if (window.confirm(`發現新版本 ${data.version}！\n確定要下載並更新嗎？`)) {
-          window.open('https://task-reminder-omega-five.vercel.app/TaskFlow.apk', '_blank');
+        if (window.confirm(`發現新版本 ${data.version}！\n確定要下載並自動安裝嗎？`)) {
+          const apkUrl = 'https://task-reminder-omega-five.vercel.app/TaskFlow.apk';
+          if (window.Capacitor?.Plugins?.AlarmPlugin) {
+            await window.Capacitor.Plugins.AlarmPlugin.installApk({ url: apkUrl });
+          } else {
+            window.open(apkUrl, '_blank');
+          }
         }
       } else {
         alert('當前是最新版本');
       }
+
     } catch (err) {
       console.error('Update check failed:', err);
       // Fallback: just open the link if check fails
