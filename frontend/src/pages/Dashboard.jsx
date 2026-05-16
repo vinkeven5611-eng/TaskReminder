@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
 import AlarmListModal from '../components/AlarmListModal';
-import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink, Bell, Trash2 } from 'lucide-react';
+import { LogOut, Plus, Search, Calendar, Inbox, Check, Clock, Settings, Trash, Bell, Loader2, X } from 'lucide-react';
 
 
 export default function Dashboard({ setAuth }) {
@@ -364,19 +364,19 @@ export default function Dashboard({ setAuth }) {
 
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               {googleStatus.is_linked ? (
-                <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定 (已連結 Google 日曆)">
+                <button className="icon-btn" onClick={() => setShowSettings(true)} title="系統設定 (已連結 Google 日曆)">
                   <div style={{ position: 'relative', display: 'flex' }}>
                     <Calendar size={20} color="var(--primary)" />
                     <span style={{ position: 'absolute', bottom: '-2px', right: '-4px', width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', border: '1.5px solid var(--panel-bg)' }}></span>
                   </div>
                 </button>
               ) : (
-                <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定">
+                <button className="icon-btn" onClick={() => setShowSettings(true)} title="系統設定">
                   <Settings size={20} />
                 </button>
               )}
 
-              <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5' }} onClick={handleLogout} title="登出">
+              <button className="icon-btn" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5' }} onClick={handleLogout} title="登出">
                 <LogOut size={20} />
               </button>
             </div>
@@ -583,7 +583,7 @@ export default function Dashboard({ setAuth }) {
               // All Tasks Done State
               <div className="empty-state-content animate-pulse-soft">
                 <div className="empty-icon-wrapper success">
-                  <CheckSquare size={40} />
+                  <Check size={40} />
                 </div>
                 <h3>太棒了，大功告成！</h3>
                 <p>你已經解決了所有待辦事項，現在是享受放鬆的最佳時刻 ☕✨</p>
@@ -625,7 +625,7 @@ export default function Dashboard({ setAuth }) {
               margin: '0 auto 1.5rem',
               color: (confirmData.type === 'delete' || confirmData.type === 'logout') ? 'var(--danger)' : 'var(--primary)'
             }}>
-               {confirmData.type === 'logout' ? <LogOut size={30} /> : (confirmData.type === 'delete' ? <Trash2 size={30} /> : <CheckSquare size={30} />)}
+               {confirmData.type === 'logout' ? <LogOut size={30} /> : (confirmData.type === 'delete' ? <Trash size={30} /> : <Check size={30} />)}
             </div>
             <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>
               {confirmData.type === 'logout' ? '登出帳號' : (confirmData.type === 'delete' ? '確認刪除' : '確認操作')}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Check, Clock, Settings, Trash2, AlarmClock, Loader2, X } from 'lucide-react';
+import { Check, Clock, Settings, Trash, Bell, Loader2, X } from 'lucide-react';
 import { taskAPI } from '../services/api';
 
 export default function TaskCard({ task, onUpdate, onDelete }) {
@@ -8,21 +8,21 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   
   const formatForInput = (isoString) => {
     if (!isoString) return '';
-    const date = new Date(isoString);
-    const pad = (n) => n.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const d = new Date(isoString);
+    const z = d.getTimezoneOffset() * 60 * 1000;
+    const localDate = new Date(d.getTime() - z);
+    return localDate.toISOString().slice(0, 16);
   };
 
   const [editDueDate, setEditDueDate] = useState(formatForInput(task.due_date));
-  
-  const isOverdue = !task.is_completed && task.due_date && new Date(task.due_date) < new Date();
-  
-  const isAndroid = /Android/i.test(navigator.userAgent);
   const [showAlarms, setShowAlarms] = useState(false);
   const [alarms, setAlarms] = useState([]);
   const [loadingAlarms, setLoadingAlarms] = useState(false);
   const [clickedAlarms, setClickedAlarms] = useState({});
   const popoverRef = useRef(null);
+  
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.is_completed;
   
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -33,62 +33,47 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     if (showAlarms) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showAlarms]);
 
   const handleAlarmClick = async (e) => {
     e.stopPropagation();
-    setShowAlarms(true);
-    if (alarms.length > 0) return;
+    if (showAlarms) {
+      setShowAlarms(false);
+      return;
+    }
     
+    setShowAlarms(true);
     setLoadingAlarms(true);
     try {
-      const data = await taskAPI.getTaskAlarms(task.id);
-      setAlarms(data.alarms || []);
+      const data = await taskAPI.getAlarms(task.id);
+      setAlarms(data || []);
+      setClickedAlarms({});
     } catch (err) {
-      console.error(err);
-      setAlarms([]);
+      console.error('Failed to fetch alarms:', err);
     } finally {
       setLoadingAlarms(false);
     }
   };
 
-  const triggerAndroidAlarm = async (e, index, hour, minute, title, isoDate) => {
+  const triggerAndroidAlarm = (e, index, hour, minute, content, iso_date) => {
     e.stopPropagation();
-
-    const targetDate = new Date(isoDate);
-
-    if (window.Capacitor?.Plugins?.AlarmPlugin) {
-      try {
-        const timestamp = targetDate.getTime();
-        const result = await window.Capacitor.Plugins.AlarmPlugin.setAlarm({ timestamp, title });
-
-        // Save to localStorage for the in-app alarm list
-        const { saveAlarm } = await import('./AlarmListModal.jsx');
-        saveAlarm(result.requestCode, title, timestamp);
-
+    if (window.Capacitor && window.Capacitor.Plugins.AlarmPlugin) {
+      const timestamp = new Date(iso_date).getTime();
+      window.Capacitor.Plugins.AlarmPlugin.setAlarm({
+        timestamp: timestamp,
+        title: content
+      }).then(() => {
         setClickedAlarms(prev => ({ ...prev, [index]: true }));
-      } catch (err) {
-        if (err.message?.includes('permission')) {
-          if (window.confirm('需要「精確鬧鐘」權限。\n點確定前往設定開啟。')) {
-            const link = document.createElement('a');
-            link.href = `intent:#Intent;action=android.settings.REQUEST_SCHEDULE_EXACT_ALARM;end`;
-            link.target = '_top';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-        } else {
-          alert('設定失敗：' + (err.message || err));
-        }
-      }
+      }).catch(err => {
+        alert("設定鬧鐘失敗: " + err.message);
+      });
     } else {
-      alert('此功能需要在 App 中使用。');
+      alert("鬧鐘功能僅支援 Android 版本");
     }
   };
-
-
-
 
   const toggleComplete = (e) => {
     e.stopPropagation();
@@ -165,9 +150,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         {isAndroid && task.due_date && !task.is_completed && (
           <>
             <button className="icon-btn alarm-btn" onClick={handleAlarmClick} title="設定鬧鐘" style={{ color: '#fbbf24', position: 'relative' }}>
-              <AlarmClock size={18} />
+              <Bell size={18} />
             </button>
-
             
             {showAlarms && (
               <div ref={popoverRef} className="alarm-popover fade-in" onClick={e => e.stopPropagation()}>
@@ -188,7 +172,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                         onClick={(e) => triggerAndroidAlarm(e, idx, alarm.hour, alarm.minute, task.content, alarm.iso_date)}
                         disabled={clickedAlarms[idx]}
                       >
-                        <AlarmClock size={14} />
+                        <Bell size={14} />
                         <span>{clickedAlarms[idx] ? '已跳轉' : `${alarm.display_text} (${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')})`}</span>
                       </button>
                     ))
@@ -206,7 +190,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           <Settings size={18} />
         </button>
         <button className="icon-btn delete" onClick={handleDelete} title="刪除">
-          <Trash2 size={18} />
+          <Trash size={18} />
         </button>
 
       </div>

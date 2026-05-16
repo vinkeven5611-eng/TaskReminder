@@ -651,16 +651,15 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
 .icon-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 42px;
-  height: 42px;
+  padding: 0.6rem;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
   transition: all 0.2s ease;
-  will-change: transform;
   box-shadow: none;
+  cursor: pointer;
 }
 
 .icon-btn:hover {
@@ -671,6 +670,7 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
 .icon-btn:active {
   transform: scale(0.9);
 }
+
 
 .icon-btn.danger:hover {
   background: rgba(239, 68, 68, 0.15);
