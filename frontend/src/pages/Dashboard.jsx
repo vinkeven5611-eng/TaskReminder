@@ -359,9 +359,11 @@ export default function Dashboard({ setAuth }) {
               </div>
             </button>
           ) : (
-                <Settings size={20} />
+            <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定">
+              <Settings size={20} />
             </button>
           )}
+
           <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5' }} onClick={handleLogout} title="登出">
             <LogOut size={20} />
           </button>
