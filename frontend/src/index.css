@@ -911,3 +911,75 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
     margin-right: 0.75rem;
   }
 }
+
+/* Alarm Popover Styles */
+.alarm-popover {
+  position: absolute;
+  bottom: 120%; /* Show above the button */
+  right: 0;
+  width: 200px;
+  background: rgba(15, 10, 40, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  overflow: hidden;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.popover-body {
+  padding: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.alarm-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alarm-item-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.alarm-item-btn.clicked {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  cursor: default;
+}
+
+.alarm-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+  animation: pulse 2s infinite;
+  pointer-events: none;
+}
+
