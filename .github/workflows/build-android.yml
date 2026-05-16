@@ -26,6 +26,22 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Create Stable Debug Keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkeypair -v \
+            -keystore ~/.android/debug.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 36500 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US"
+          echo "====BASE64_START===="
+          base64 ~/.android/debug.keystore
+          echo "====BASE64_END===="
+
       - name: Create Environment Variables
         run: |
           echo "VITE_API_URL=https://taskreminder-api.onrender.com/api" > frontend/.env
@@ -53,3 +69,4 @@ jobs:
         with:
           name: TaskFlow-Android-App
           path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+
