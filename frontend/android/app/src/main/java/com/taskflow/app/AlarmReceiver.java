@@ -7,9 +7,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.Settings;
 import androidx.core.app.NotificationCompat;
 
@@ -26,8 +29,13 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         if (ACTION_DISMISS.equals(intent.getAction())) {
             manager.cancel(notifId);
+            Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null) {
+                vibrator.cancel();
+            }
             return;
         }
+
 
         String title = intent.getStringExtra("title");
         if (title == null) title = "任務提醒";
@@ -82,27 +90,46 @@ public class AlarmReceiver extends BroadcastReceiver {
             alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
 
-        // Long rhythmic vibration pattern (30 seconds of pulses)
-        long[] vibrationPattern = {
-            0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400
-        };
+        // Detect Ringer Mode
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        boolean isSilent = audioManager.getRingerMode() != AudioManager.RINGER_MODE_NORMAL;
+
+        // Pattern for silent mode (Very long and rhythmic)
+        long[] silentVibration = {0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400};
+        // Pattern for normal mode (Standard)
+        long[] normalVibration = {0, 500, 300, 500};
+
+        long[] selectedPattern = isSilent ? silentVibration : normalVibration;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ 任務鬧鐘響起")
+            .setContentTitle(isSilent ? "🚨 任務提醒 (靜音模式)" : "⏰ 任務鬧鐘響起")
             .setContentText(title)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(title + "\n\n請及時處理您的任務！"))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true) // Prevent swiping away
+            .setOngoing(true)
             .setAutoCancel(false)
-            .setSound(alarmUri)
-            .setVibrate(vibrationPattern)
-            .setFullScreenIntent(dismissPendingIntent, true) // Pass the intent to trigger immediate popup
+            .setSound(isSilent ? null : alarmUri) // No notification sound if silent (Vibrator handles it)
+            .setVibrate(selectedPattern)
+            .setFullScreenIntent(dismissPendingIntent, true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "【 點擊關閉鬧鐘 】", dismissPendingIntent);
 
         manager.notify(currentNotifId, builder.build());
+
+        // If silent, also trigger a manual Vibrator for extra persistence on some devices
+        if (isSilent) {
+            Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null && vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createWaveform(silentVibration, -1));
+                } else {
+                    vibrator.vibrate(silentVibration, -1);
+                }
+            }
+        }
+
 
 
     }
