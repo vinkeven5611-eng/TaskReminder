@@ -21,6 +21,9 @@ export default function Dashboard({ setAuth }) {
   const [isLinking, setIsLinking] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  
+  const CURRENT_VERSION = "2.4"; // Must match build.gradle and version.json
   const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
   const callbackHandled = useRef(false);
 
@@ -149,6 +152,30 @@ export default function Dashboard({ setAuth }) {
       window.removeEventListener('focus', handleVisibilityChange);
     };
   }, [googleStatus.is_calendar_enabled, googleStatus.is_linked]);
+
+  const handleCheckUpdate = async () => {
+    try {
+      setIsCheckingUpdate(true);
+      // Add timestamp to bypass cache
+      const response = await fetch(`https://task-reminder-omega-five.vercel.app/version.json?t=${Date.now()}`);
+      const data = await response.json();
+      
+      if (data.version !== CURRENT_VERSION) {
+        if (window.confirm(`發現新版本 ${data.version}！\n確定要下載並更新嗎？`)) {
+          window.open('https://task-reminder-omega-five.vercel.app/TaskFlow.apk', '_blank');
+        }
+      } else {
+        alert('當前是最新版本');
+      }
+    } catch (err) {
+      console.error('Update check failed:', err);
+      // Fallback: just open the link if check fails
+      window.open('https://task-reminder-omega-five.vercel.app/TaskFlow.apk', '_blank');
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
 
   useEffect(() => {
     const checkTasks = () => {
@@ -434,12 +461,13 @@ export default function Dashboard({ setAuth }) {
                          <span style={{ fontSize: '0.85rem', color: '#fbbf24', fontWeight: '500' }}>發現新功能？</span>
                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>點擊按鈕下載最新版 APK</span>
                        </div>
-                       <button 
-                         onClick={() => window.open('https://task-reminder-omega-five.vercel.app/TaskFlow.apk', '_blank')}
-                         style={{ padding: '0.5rem 1rem', background: '#fbbf24', color: '#000', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }}
-                       >
-                         立即更新
-                       </button>
+                    <button 
+                      onClick={handleCheckUpdate}
+                      disabled={isCheckingUpdate}
+                      style={{ padding: '0.5rem 1rem', background: '#fbbf24', color: '#000', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', opacity: isCheckingUpdate ? 0.7 : 1 }}
+                    >
+                      {isCheckingUpdate ? '檢查中...' : '檢查最新版本'}
+                    </button>
                     </div>
                   </div>
                 )}
