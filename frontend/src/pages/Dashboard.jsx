@@ -241,12 +241,9 @@ export default function Dashboard({ setAuth }) {
   };
 
   const handleLogout = () => {
-    if (window.confirm('確定要登出嗎？')) {
-      localStorage.removeItem('taskflow_token');
-      localStorage.removeItem('taskflow_username');
-      setAuth(false);
-    }
+    setConfirmData({ type: 'logout' });
   };
+
 
 
   const handleAddTask = async (e) => {
@@ -298,10 +295,15 @@ export default function Dashboard({ setAuth }) {
         executeTaskUpdate(confirmData.id, { is_completed: confirmData.is_completed });
       } else if (confirmData.type === 'delete') {
         executeTaskDelete(confirmData.id);
+      } else if (confirmData.type === 'logout') {
+        localStorage.removeItem('taskflow_token');
+        localStorage.removeItem('taskflow_username');
+        setAuth(false);
       }
       setConfirmData(null);
     }
   };
+
 
   const handleDeleteTask = (id) => {
     const task = tasks.find(t => t.id === id);
@@ -614,21 +616,23 @@ export default function Dashboard({ setAuth }) {
             <div style={{ 
               width: '60px', 
               height: '60px', 
-              background: confirmData.type === 'delete' ? 'rgba(239, 68, 68, 0.1)' : (confirmData.is_completed ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255, 255, 255, 0.05)'),
+              background: (confirmData.type === 'delete' || confirmData.type === 'logout') ? 'rgba(239, 68, 68, 0.1)' : (confirmData.is_completed ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255, 255, 255, 0.05)'),
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1.5rem',
-              color: confirmData.type === 'delete' ? 'var(--danger)' : 'var(--primary)'
+              color: (confirmData.type === 'delete' || confirmData.type === 'logout') ? 'var(--danger)' : 'var(--primary)'
             }}>
-              {confirmData.type === 'delete' ? <LogOut size={30} style={{ transform: 'rotate(90deg)' }} /> : <CheckSquare size={30} />}
+              {confirmData.type === 'logout' ? <LogOut size={30} /> : (confirmData.type === 'delete' ? <LogOut size={30} style={{ transform: 'rotate(90deg)' }} /> : <CheckSquare size={30} />)}
             </div>
             <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>
-              {confirmData.type === 'delete' ? '確認刪除' : '確認操作'}
+              {confirmData.type === 'logout' ? '登出帳號' : (confirmData.type === 'delete' ? '確認刪除' : '確認操作')}
             </h3>
             <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
-              {confirmData.type === 'delete' ? (
+              {confirmData.type === 'logout' ? (
+                <>確定要登出 TaskFlow 嗎？您之後需要重新登入才能存取您的任務。</>
+              ) : confirmData.type === 'delete' ? (
                 <>確定要永久刪除「<span style={{ color: '#fff', fontWeight: '600' }}>{confirmData.content}</span>」嗎？此操作無法復原。</>
               ) : (
                 <>確定要將任務「<span style={{ color: '#fff', fontWeight: '600' }}>{confirmData.content}</span>」標記為{confirmData.is_completed ? '已完成' : '未完成'}嗎？</>
