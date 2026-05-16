@@ -58,4 +58,31 @@ public class AlarmPlugin extends Plugin {
         ret.put("requestCode", requestCode);
         call.resolve(ret);
     }
+
+    @PluginMethod
+    public void cancelAlarm(PluginCall call) {
+        int requestCode = call.getInt("requestCode", -1);
+        if (requestCode == -1) {
+            call.reject("Invalid requestCode");
+            return;
+        }
+
+        Context context = getContext();
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        alarmManager.cancel(pendingIntent);
+        pendingIntent.cancel();
+
+        JSObject ret = new JSObject();
+        ret.put("cancelled", true);
+        call.resolve(ret);
+    }
 }

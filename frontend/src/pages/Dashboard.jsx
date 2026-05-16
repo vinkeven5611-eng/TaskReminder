@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 // Trigger redeploy for UI update verification
 import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
-import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink } from 'lucide-react';
+import AlarmListModal from '../components/AlarmListModal';
+import { LogOut, Plus, Search, Calendar, Inbox, CheckSquare, Clock, Settings, Link as LinkIcon, Unlink, Bell } from 'lucide-react';
 
 export default function Dashboard({ setAuth }) {
   const [tasks, setTasks] = useState([]);
@@ -13,6 +14,8 @@ export default function Dashboard({ setAuth }) {
   
   // Google Calendar State
   const [showSettings, setShowSettings] = useState(false);
+  const [showAlarmList, setShowAlarmList] = useState(false);
+  const isAndroid = /Android/i.test(navigator.userAgent);
   const [confirmData, setConfirmData] = useState(null); // { id, type: 'toggle'|'delete', is_completed?, content }
   const [googleStatus, setGoogleStatus] = useState({ is_linked: false, is_calendar_enabled: false, google_email: null });
   const [isLinking, setIsLinking] = useState(false);
@@ -286,6 +289,7 @@ export default function Dashboard({ setAuth }) {
 
   return (
     <div className="container">
+      {showAlarmList && <AlarmListModal onClose={() => setShowAlarmList(false)} />}
       <header className="dashboard-header fade-in">
         <div>
           <h2>早安，{username}</h2>
@@ -302,6 +306,11 @@ export default function Dashboard({ setAuth }) {
           ) : (
             <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setShowSettings(true)} title="系統設定">
               <Settings size={20} />
+            </button>
+          )}
+          {isAndroid && (
+            <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(167,139,250,0.1)', color: '#a78bfa' }} onClick={() => setShowAlarmList(true)} title="鬧鐘清單">
+              <Bell size={20} />
             </button>
           )}
           <button className="icon-btn" style={{ padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5' }} onClick={handleLogout} title="登出">

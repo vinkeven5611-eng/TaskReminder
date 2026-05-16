@@ -53,27 +53,40 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     }
   };
 
-  const triggerAndroidAlarm = (e, index, hour, minute, title, isoDate) => {
+  const triggerAndroidAlarm = async (e, index, hour, minute, title, isoDate) => {
     e.stopPropagation();
-    
+
     const targetDate = new Date(isoDate);
-    // JS getDay(): 0=Sun,1=Mon,...,6=Sat
-    // Android AlarmClock.EXTRA_DAYS: 1=Sun,2=Mon,...,7=Sat
-    const androidDay = targetDate.getDay() + 1;
-    const msg = encodeURIComponent(title);
-    
-    // MainActivity will convert i.DAYS (int) to proper ArrayList<Integer> before forwarding
-    const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=${msg};i.android.intent.extra.alarm.DAYS=${androidDay};B.android.intent.extra.alarm.SKIP_UI=false;end`;
-    
-    setClickedAlarms(prev => ({ ...prev, [index]: true }));
-    
-    const link = document.createElement('a');
-    link.href = intentUrl;
-    link.target = '_top';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    if (window.Capacitor?.Plugins?.AlarmPlugin) {
+      try {
+        const timestamp = targetDate.getTime();
+        const result = await window.Capacitor.Plugins.AlarmPlugin.setAlarm({ timestamp, title });
+
+        // Save to localStorage for the in-app alarm list
+        const { saveAlarm } = await import('./AlarmListModal.jsx');
+        saveAlarm(result.requestCode, title, timestamp);
+
+        setClickedAlarms(prev => ({ ...prev, [index]: true }));
+      } catch (err) {
+        if (err.message?.includes('permission')) {
+          if (window.confirm('需要「精確鬧鐘」權限。\n點確定前往設定開啟。')) {
+            const link = document.createElement('a');
+            link.href = `intent:#Intent;action=android.settings.REQUEST_SCHEDULE_EXACT_ALARM;end`;
+            link.target = '_top';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        } else {
+          alert('設定失敗：' + (err.message || err));
+        }
+      }
+    } else {
+      alert('此功能需要在 App 中使用。');
+    }
   };
+
 
 
 
