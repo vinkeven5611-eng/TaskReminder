@@ -115,10 +115,14 @@ public class AlarmPlugin extends Plugin {
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         request.setTitle("TaskFlow Update");
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
-
         
         String fileName = "TaskFlow_Update.apk";
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+        // Use App's private external files directory to avoid permission issues and path blocks
+        File destinationFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName);
+        if (destinationFile.exists()) {
+            destinationFile.delete();
+        }
+        request.setDestinationUri(Uri.fromFile(destinationFile));
 
         final DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         final long downloadId = downloadManager.enqueue(request);
@@ -127,8 +131,7 @@ public class AlarmPlugin extends Plugin {
             public void onReceive(Context c, Intent intent) {
                 long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
                 if (downloadId == id) {
-                    File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
-                    Uri apkUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
+                    Uri apkUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", destinationFile);
 
                     Intent installIntent = new Intent(Intent.ACTION_VIEW);
                     installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
@@ -140,6 +143,7 @@ public class AlarmPlugin extends Plugin {
                 }
             }
         };
+
 
         if (Build.VERSION.SDK_INT >= 33) {
             context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), 2); // RECEIVER_EXPORTED
