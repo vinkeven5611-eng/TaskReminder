@@ -24,7 +24,28 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "3.3"; // Robust Alarm Fix Version
+  const CURRENT_VERSION = "3.4"; // Permission & Stability Fix Version
+
+  useEffect(() => {
+    // Request Notification Permission on mount
+    const requestPerms = async () => {
+      if (window.Capacitor?.Plugins?.AlarmPlugin) {
+        try {
+          const perms = await window.Capacitor.Plugins.AlarmPlugin.checkPermissions();
+          if (!perms.notifications) {
+             // For Android 13+, if notifications are not enabled, just alert
+             alert("💡 為了讓鬧鐘能正常響鈴，請務必在系統設定中開啟 TaskFlow 的『通知權限』。");
+          }
+          if (!perms.exactAlarm && window.confirm("偵測到『精確鬧鐘權限』未開啟，這會導致鬧鐘無法準時響起。\n現在要前往開啟嗎？")) {
+             await window.Capacitor.Plugins.AlarmPlugin.requestAlarmPermission();
+          }
+        } catch (e) {
+          console.error("Permission check failed", e);
+        }
+      }
+    };
+    requestPerms();
+  }, []);
 
   const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
   const callbackHandled = useRef(false);

@@ -97,6 +97,37 @@ public class AlarmPlugin extends Plugin {
             intent,
             flags
         );
+    @PluginMethod
+    public void checkPermissions(PluginCall call) {
+        Context context = getContext();
+        JSObject ret = new JSObject();
+        
+        boolean notificationEnabled = true;
+        if (Build.VERSION.SDK_INT >= 33) {
+            notificationEnabled = context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        }
+
+        boolean exactAlarmEnabled = true;
+        if (Build.VERSION.SDK_INT >= 31) {
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            exactAlarmEnabled = alarmManager.canScheduleExactAlarms();
+        }
+
+        ret.put("notifications", notificationEnabled);
+        ret.put("exactAlarm", exactAlarmEnabled);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestAlarmPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= 31) {
+            Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+            getContext().startActivity(intent);
+            call.resolve();
+        } else {
+            call.resolve();
+        }
+    }
 
         alarmManager.cancel(pendingIntent);
         pendingIntent.cancel();
