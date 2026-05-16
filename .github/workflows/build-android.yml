@@ -36,7 +36,9 @@ jobs:
           fi
           # Filter out any potential whitespace or markers to be extra safe
           CLEAN_BASE64=$(echo "$KEYSTORE_BASE64" | tr -d '[:space:]' | sed 's/====BASE64_START====//g' | sed 's/====BASE64_END====//g')
+          mkdir -p ~/.android
           echo "$CLEAN_BASE64" | base64 --decode > ~/.android/debug.keystore
+
 
 
 
