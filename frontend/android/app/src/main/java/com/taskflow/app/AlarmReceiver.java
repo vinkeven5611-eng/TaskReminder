@@ -14,7 +14,8 @@ import android.provider.Settings;
 import androidx.core.app.NotificationCompat;
 
 public class AlarmReceiver extends BroadcastReceiver {
-    private static final String CHANNEL_ID = "taskflow_alarms";
+    private static final String CHANNEL_ID = "taskflow_alarms_v2";
+
     public static final String ACTION_DISMISS = "com.taskflow.app.ACTION_DISMISS";
 
     @Override
