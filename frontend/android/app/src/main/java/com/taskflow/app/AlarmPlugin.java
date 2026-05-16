@@ -34,15 +34,18 @@ public class AlarmPlugin extends Plugin {
         Context context = getContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        Intent intent = new Intent(context, AlarmReceiver.class);
-        intent.putExtra("title", title);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= 23) { // Build.VERSION_CODES.M
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
 
         int requestCode = (int) (timestamp % Integer.MAX_VALUE);
 
-        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= 23) { // Build.VERSION_CODES.M
-            flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
-        }
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        intent.putExtra("title", title);
+        intent.putExtra("notifId", requestCode);
+        intent.putExtra("timestamp", timestamp);
+
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -117,6 +120,7 @@ public class AlarmPlugin extends Plugin {
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
         
         String fileName = "TaskFlow_Update.apk";
+        String CURRENT_VERSION = "3.3";
         // Use App's private external files directory to avoid permission issues and path blocks
         File destinationFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName);
         if (destinationFile.exists()) {

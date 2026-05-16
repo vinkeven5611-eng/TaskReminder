@@ -31,21 +31,30 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
-                "TaskFlow 鬧鐘提醒",
+                "TaskFlow 任務鬧鐘",
                 NotificationManager.IMPORTANCE_HIGH
             );
+            channel.setDescription("用於發送定時任務的鬧鐘提醒");
             channel.enableVibration(true);
+            channel.enableLights(true);
+            channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            
+            // Use RingtoneManager for more reliable sound
+            Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (alarmUri == null) {
+                alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            }
             
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build();
                 
-            channel.setSound(Settings.System.DEFAULT_ALARM_ALERT_URI, audioAttributes);
+            channel.setSound(alarmUri, audioAttributes);
             manager.createNotificationChannel(channel);
         }
 
-        int currentNotifId = (int) System.currentTimeMillis();
+        int currentNotifId = intent.getIntExtra("notifId", (int) System.currentTimeMillis());
 
         // Intent for the Close button
         Intent dismissIntent = new Intent(context, AlarmReceiver.class);
@@ -64,18 +73,26 @@ public class AlarmReceiver extends BroadcastReceiver {
             flags
         );
 
+        Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        if (alarmUri == null) {
+            alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        }
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("⏰ 任務提醒")
             .setContentText(title)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-            .setSound(Settings.System.DEFAULT_ALARM_ALERT_URI)
-            .setVibrate(new long[]{0, 500, 300, 500})
+            .setSound(alarmUri)
+            .setVibrate(new long[]{0, 500, 300, 500, 300, 500})
+            .setFullScreenIntent(null, true) // Trigger heads-up
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "關閉鬧鐘", dismissPendingIntent);
 
         manager.notify(currentNotifId, builder.build());
+
     }
 }
 

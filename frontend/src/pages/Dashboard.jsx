@@ -24,7 +24,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "3.2"; // Final Fixed Signature Version
+  const CURRENT_VERSION = "3.3"; // Robust Alarm Fix Version
 
   const [syncHistory, setSyncHistory] = useState([]); // Array of recent sync results
   const callbackHandled = useRef(false);
