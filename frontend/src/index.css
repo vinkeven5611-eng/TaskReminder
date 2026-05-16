@@ -27,6 +27,11 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--bg-solid);
   color: var(--text-main);
@@ -36,7 +41,10 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  overscroll-behavior-y: none; /* Prevent browser pull-to-refresh if desired, or use 'contain' */
+  touch-action: manipulation;
 }
+
 
 /* Ambient Background Lights */
 body::before, body::after {
@@ -495,10 +503,17 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   margin-bottom: 0.75rem;
   border: 1px solid var(--border-color);
   backdrop-filter: blur(12px);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px var(--primary-glow);
   position: relative;
-  /* Removed overflow: hidden so the popover isn't cut off */
+  will-change: transform, opacity;
 }
+
+.task-card:active {
+  transform: scale(0.985);
+  background: var(--panel-hover);
+}
+
 
 .task-card::before {
   content: '';
@@ -549,6 +564,10 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   background: rgba(99, 102, 241, 0.1);
   color: var(--primary);
   transform: scale(1.1);
+}
+
+.custom-checkbox:active {
+  transform: scale(0.9);
 }
 
 .task-card.completed .custom-checkbox {
@@ -630,20 +649,27 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
 }
 
 .icon-btn {
-  background: transparent;
-  color: var(--text-muted);
-  padding: 0.5rem;
-  border: none;
-  box-shadow: none;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  will-change: transform;
+  box-shadow: none;
 }
 
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
 }
 
 .icon-btn.danger:hover {
@@ -698,11 +724,15 @@ input:focus + .input-icon, .input-wrapper:focus-within .input-icon {
   align-items: center;
   justify-content: flex-start;
   gap: 0.5rem;
+  transition: all 0.2s;
 }
 .alarm-item-btn:hover:not(.clicked) {
   background: rgba(251, 191, 36, 0.15);
   border-color: rgba(251, 191, 36, 0.3);
   color: #fbbf24;
+}
+.alarm-item-btn:active {
+  transform: scale(0.98);
 }
 .alarm-item-btn.clicked {
   background: rgba(255,255,255,0.02);
