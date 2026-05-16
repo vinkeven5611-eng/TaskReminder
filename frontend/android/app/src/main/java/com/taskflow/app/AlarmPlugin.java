@@ -21,7 +21,6 @@ import java.io.File;
 @CapacitorPlugin(name = "AlarmPlugin")
 public class AlarmPlugin extends Plugin {
 
-
     @PluginMethod
     public void setAlarm(PluginCall call) {
         long timestamp = call.getLong("timestamp", 0L);
@@ -41,7 +40,7 @@ public class AlarmPlugin extends Plugin {
         int requestCode = (int) (timestamp % Integer.MAX_VALUE);
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= 23) { // Build.VERSION_CODES.M
             flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
         }
 
@@ -52,11 +51,9 @@ public class AlarmPlugin extends Plugin {
             flags
         );
 
-
-        // Check for exact alarm permission on Android 12+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= 31) { // Build.VERSION_CODES.S
             if (!alarmManager.canScheduleExactAlarms()) {
-                call.reject("Exact alarm permission not granted. User must enable it in Settings.");
+                call.reject("Exact alarm permission not granted.");
                 return;
             }
         }
@@ -87,7 +84,7 @@ public class AlarmPlugin extends Plugin {
         Intent intent = new Intent(context, AlarmReceiver.class);
         
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= 23) { // Build.VERSION_CODES.M
             flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
         }
 
@@ -99,7 +96,6 @@ public class AlarmPlugin extends Plugin {
         );
 
         alarmManager.cancel(pendingIntent);
-
         pendingIntent.cancel();
 
         JSObject ret = new JSObject();
@@ -118,7 +114,6 @@ public class AlarmPlugin extends Plugin {
         Context context = getContext();
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         request.setTitle("TaskFlow Update");
-        request.setDescription("Downloading latest version...");
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         
         String fileName = "TaskFlow_Update.apk";
@@ -127,7 +122,6 @@ public class AlarmPlugin extends Plugin {
         final DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         final long downloadId = downloadManager.enqueue(request);
 
-        // Register receiver to open APK after download
         BroadcastReceiver onComplete = new BroadcastReceiver() {
             public void onReceive(Context c, Intent intent) {
                 long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
@@ -146,14 +140,14 @@ public class AlarmPlugin extends Plugin {
             }
         };
 
-        if (Build.VERSION.SDK_INT >= 33) { // TIRAMISU
-            context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), 2); // Context.RECEIVER_EXPORTED = 2
+        if (Build.VERSION.SDK_INT >= 33) {
+            context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), 2); // RECEIVER_EXPORTED
         } else {
             context.registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         }
 
-
         call.resolve();
     }
 }
+
 

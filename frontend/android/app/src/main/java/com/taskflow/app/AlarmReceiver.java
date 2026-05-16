@@ -6,7 +6,9 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioAttributes;
 import android.os.Build;
+import android.provider.Settings;
 import androidx.core.app.NotificationCompat;
 
 public class AlarmReceiver extends BroadcastReceiver {
@@ -33,13 +35,13 @@ public class AlarmReceiver extends BroadcastReceiver {
                 NotificationManager.IMPORTANCE_HIGH
             );
             channel.enableVibration(true);
-            channel.setSound(
-                android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI,
-                new android.media.AudioAttributes.Builder()
-                    .setUsage(android.media.AudioAttributes.USAGE_ALARM)
-                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            );
+            
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+                
+            channel.setSound(Settings.System.DEFAULT_ALARM_ALERT_URI, audioAttributes);
             manager.createNotificationChannel(channel);
         }
 
@@ -51,8 +53,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         dismissIntent.putExtra("notifId", currentNotifId);
         
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            flags |= 0x04000000; // PendingIntent.FLAG_IMMUTABLE
+        if (Build.VERSION.SDK_INT >= 23) { // M
+            flags |= 0x04000000; // FLAG_IMMUTABLE
         }
 
         PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(
@@ -62,7 +64,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             flags
         );
 
-
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("⏰ 任務提醒")
@@ -70,11 +71,12 @@ public class AlarmReceiver extends BroadcastReceiver {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
-            .setSound(android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI)
+            .setSound(Settings.System.DEFAULT_ALARM_ALERT_URI)
             .setVibrate(new long[]{0, 500, 300, 500})
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "關閉鬧鐘", dismissPendingIntent);
 
         manager.notify(currentNotifId, builder.build());
     }
 }
+
 
