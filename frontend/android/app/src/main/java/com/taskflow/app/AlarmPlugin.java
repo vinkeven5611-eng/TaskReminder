@@ -97,6 +97,15 @@ public class AlarmPlugin extends Plugin {
             intent,
             flags
         );
+
+        alarmManager.cancel(pendingIntent);
+        pendingIntent.cancel();
+
+        JSObject ret = new JSObject();
+        ret.put("cancelled", true);
+        call.resolve(ret);
+    }
+
     @PluginMethod
     public void checkPermissions(PluginCall call) {
         Context context = getContext();
@@ -129,13 +138,6 @@ public class AlarmPlugin extends Plugin {
         }
     }
 
-        alarmManager.cancel(pendingIntent);
-        pendingIntent.cancel();
-
-        JSObject ret = new JSObject();
-        ret.put("cancelled", true);
-        call.resolve(ret);
-    }
 
     @PluginMethod
     public void installApk(PluginCall call) {
