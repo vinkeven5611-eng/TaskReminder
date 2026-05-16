@@ -24,7 +24,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "3.5"; // Sound Fix Version
+  const CURRENT_VERSION = "3.6"; // Interaction Fix Version
 
   useEffect(() => {
     // Request Notification Permission on mount

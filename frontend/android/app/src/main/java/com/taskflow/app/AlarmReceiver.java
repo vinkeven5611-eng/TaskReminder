@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat;
 
 public class AlarmReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "taskflow_alarms_v2";
+    private static final String CURRENT_VERSION = "3.6";
 
     public static final String ACTION_DISMISS = "com.taskflow.app.ACTION_DISMISS";
 
@@ -81,20 +82,28 @@ public class AlarmReceiver extends BroadcastReceiver {
             alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
 
+        // Long rhythmic vibration pattern (30 seconds of pulses)
+        long[] vibrationPattern = {
+            0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400
+        };
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ 任務提醒")
+            .setContentTitle("⏰ 任務鬧鐘響起")
             .setContentText(title)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(title + "\n\n請及時處理您的任務！"))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setAutoCancel(true)
+            .setOngoing(true) // Prevent swiping away
+            .setAutoCancel(false)
             .setSound(alarmUri)
-            .setVibrate(new long[]{0, 500, 300, 500, 300, 500})
-            .setFullScreenIntent(null, true) // Trigger heads-up
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "關閉鬧鐘", dismissPendingIntent);
+            .setVibrate(vibrationPattern)
+            .setFullScreenIntent(dismissPendingIntent, true) // Pass the intent to trigger immediate popup
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "【 點擊關閉鬧鐘 】", dismissPendingIntent);
 
         manager.notify(currentNotifId, builder.build());
+
 
     }
 }
