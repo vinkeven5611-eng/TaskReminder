@@ -114,7 +114,8 @@ public class AlarmPlugin extends Plugin {
         Context context = getContext();
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         request.setTitle("TaskFlow Update");
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
+
         
         String fileName = "TaskFlow_Update.apk";
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
