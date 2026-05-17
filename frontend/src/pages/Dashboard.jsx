@@ -24,7 +24,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "3.7"; // Smart Vibration Fix Version
+  const CURRENT_VERSION = "3.8"; // STREAM_ALARM Fix Version
 
   useEffect(() => {
     // Request Notification Permission on mount
