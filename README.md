@@ -1,9 +1,71 @@
 # TaskReminder 🔔
 
-TaskReminder 是一款整合 Google 日曆雙向同步與 Android 原生系統通知的任務管理工具。旨在解決免費雲端環境下的通知延遲與系統限制，提供穩定的任務提醒體驗。
+> **「極簡、準確、無縫同步」** — 專為現代人設計的智能任務管理工具。
+> 完美的網頁體驗，搭配 Android 原生「真·鬧鐘」防漏通知，徹底終結「放鳥任務」的惡夢！
 
-🌐 **線上體驗**：[https://task-reminder-omega-five.vercel.app](https://task-reminder-omega-five.vercel.app)  
-📱 **Android 版下載**：[TaskFlow.apk](https://task-reminder-omega-five.vercel.app/TaskFlow.apk)
+🌐 **網頁版線上體驗**：[https://task-reminder-omega-five.vercel.app](https://task-reminder-omega-five.vercel.app)  
+📱 **Android 官方版下載**：[TaskFlow.apk (最新 v3.9 版)](https://task-reminder-omega-five.vercel.app/TaskFlow.apk)
+
+---
+
+## 🌟 核心功能特色
+
+*   **⚡ 兩步驟極速註冊**：只需輸入信箱，完成免密碼登入 (2FA 驗證碼)，兼顧安全與快速。
+*   **📅 Google 日曆雙向無縫同步**：一鍵連結你的 Google 帳號，TaskFlow 的任務會自動同步至日曆，在外部日曆的更動也能一鍵拉回。
+*   **⏰ 獨家 Android「真·鬧鐘」提醒**：
+    *   **頂部橫幅直彈**：時間到時，鬧鐘通知直接從手機頂部跳出，不縮水、不隱藏。
+    *   **一鍵直接關閉**：跳出的通知下方直接提供「✕ 關閉鬧鐘」大按鈕，點擊立刻停止！
+    *   **智慧震動與音響**：有聲音時走 `STREAM_ALARM` 鬧鐘特權音軌（超大聲響鈴）；靜音或震動模式下自動切換為 30 秒「救命級」高節奏持續震動。
+    *   **無殘留清理**：鬧鐘響完後或任務被刪除時，鬧鐘排程會自動從手機與清單中清空，保持極簡。
+
+---
+
+## 🌐 網頁版使用說明
+
+### 第一步：免密登入與註冊
+1. 輸入您的常用 **Email 信箱**。
+2. 系統會自動寄出一封包含 **6 位數驗證碼** 的郵件。
+3. 輸入驗證碼即可快速登入（首次輸入新 Email 會自動建立新帳號）。
+
+### 第二步：新增任務與截止時間
+*   在上方輸入框輸入任務內容。
+*   點擊 **日曆圖示** 選擇您的「任務截止時間（Due Date）」，接著點擊「新增任務」即可！
+
+### 第三步：連結 Google 日曆同步
+1. 點擊右上角的 **「設定 (⚙️)」** 圖示。
+2. 點擊 **「連結 Google 帳號」** 並完成 Google 安全授權。
+3. 授權完成後，開啟 **「自動同步任務到 Google 日曆」** 開關。
+4. 之後不論是新增、完成還是刪除任務，TaskFlow 都會將其同步為您的 Google 日曆行程。
+5. 若您在 Google 日曆上修改了行程時間，只需在 TaskFlow 點擊 **「同步更新」** 按鈕，最新的變更就會立刻拉回本地。
+
+---
+
+## 📱 Android App 使用與安裝指南
+
+> [!IMPORTANT]
+> **Android 版最核心的優勢**：一般網頁 App (PWA) 在手機螢幕關閉時無法準時發出聲音提醒。TaskFlow Android 原生版採用了系統底層的 `AlarmManager` 引擎，即使手機處於深度睡眠，時間到一樣能精確響鈴！
+
+### 📥 安裝與版本更新
+1. 在手機上打開瀏覽器，前往 [TaskReminder 線上版](https://task-reminder-omega-five.vercel.app) 下載 `TaskFlow.apk`。
+2. 下載完成後，點擊安裝（若系統提示「未知的來源」，請選擇允許安裝）。
+3. **版本更新**：未來若有新版本，App 在開啟時會自動跳出 **「發現新版本」** 提示，點擊確認即可一鍵下載並完成自動覆蓋安裝，無需手動去瀏覽器下載！
+
+### 🔑 權限設定（非常重要！攸關鬧鐘是否會響）
+為了確保鬧鐘在背景能準時且大聲地叫醒您，請在首次開啟 App 時完成以下授權：
+1. **通知權限 (Post Notifications)**：App 啟動時會主動請求，請務必點擊**「允許」**，鬧鐘通知才能彈出。
+2. **精確鬧鐘權限 (Exact Alarms)**：App 啟動時會引導您前往系統設定，請點擊確定並在系統開關中將 TaskFlow 的 **「允許設定精確鬧鐘」** 開啟。
+3. **電池最佳化關閉（可選）**：在您的 Android 手機「設定 -> 應用程式管理 -> TaskFlow -> 省電策略 / 電池最佳化」中，選擇**「無限制」**或**「不限制背景活動」**。這能防止手機系統在半夜強制殺掉鬧鐘服務。
+
+### ⏰ 設定任務鬧鐘
+1. 在任務卡片上，點擊 **鐘頭圖示 (🔔)** 開啟鬧鐘設定面板。
+2. 點擊 **「新增鬧鐘」**，設定您希望鬧鐘響起的日期與時間（可以早於截止時間，例如提早 15 分鐘提醒您準備）。
+3. 設定完畢後點擊儲存，該鬧鐘即會寫入手機的原生晶片。
+4. 點擊頂部的 **「鬧鐘清單」** 按鈕，可以查看所有已排定的鬧鐘，或隨時關閉它們。
+
+### 🚨 鬧鐘響起時的互動
+*   **手機在桌上或使用中**：鬧鐘時間到時，手機會大聲播放鈴聲，並從螢幕頂部直接彈出橫幅。
+*   **按鈕清晰可見**：橫幅上會直接露出 **`✕ 關閉鬧鐘`** 的大按鈕，輕輕一按，音樂與震動立刻停止。
+*   **防止誤滑**：鬧鐘通知被設定為「持續性」，無法隨手往左或往右滑掉，避免您在半夢半醒中滑掉通知而睡過頭。
 
 ---
 
@@ -34,28 +96,8 @@ graph TD
 *   **資料層 (Persistence)**：使用 Render 託管的 PostgreSQL 資料庫，儲存使用者資料、任務清單及經 AES 加密後的第三方授權權杖。
 *   **整合層 (Integrations)**：
     *   **Google OAuth & Calendar**：實現跨平台的事件同步與身分驗證。
-    *   **Brevo API**：作為雲端發信網關，解決標準 SMTP 於免費雲端環境受限的問題，負責 2FA 驗證碼與任務提醒信件。
+    *   **Brevo API**：作為雲端發信網關，負責 2FA 驗證碼與任務提醒信件，避開了 Render 免費雲端的發信限制。
 *   **原生層 (Native Layer)**：Android App 以 Capacitor 為核心，並透過自定義的 Java Bridge 實作與系統底層鬧鐘引擎的直接通訊。
-
----
-
-
-## 🚀 核心技術亮點
-
-### 1. Android 原生鬧鐘橋接 (Native Bridge)
-*   **挑戰**：Android 系統鬧鐘的 `SET_ALARM` Intent 要求「星期」參數 (`EXTRA_DAYS`) 必須為 `ArrayList<Integer>` 型別。然而，傳統網頁 Intent URI 僅能傳遞基礎型別，導致跨日提醒在原生層面失效。
-*   **方案**：在 Android 原生層 `MainActivity.java` 實作指令攔截器。
-*   **技術**：動態捕捉網頁端的 Intent 請求，在原生層進行型別轉換與包裝，成功實現網頁與手機系統鬧鐘的無縫精確同步。
-
-### 2. 免費雲端環境下的郵件送達優化
-*   **挑戰**：主流免費雲端平台 (如 Render) 為防範垃圾郵件，通常會封鎖標準 SMTP 通訊埠 (25/465/587)，導致傳統發信程式失效。
-*   **方案**：捨棄 SMTP 協定，改採 **Brevo REST API** 封裝發信邏輯。
-*   **技術**：透過 HTTP 通訊協定繞過通訊埠封鎖，顯著提升了在雲端限制環境下的郵件通知穩定性。
-
-### 3. Google 日曆雙向同步機制
-*   **挑戰**：確保第三方日曆與本地資料庫的一致性。
-*   **方案**：實作 OAuth 2.0 授權流程與差異比對邏輯。
-*   **技術**：整合 Google Calendar API，支援任務新增、編輯同步至雲端，並提供一鍵「同步更新」功能，將外部修改回流至本地。
 
 ---
 
@@ -66,36 +108,10 @@ graph TD
 | **Frontend** | React 18, Vite 5, Lucide Icons, Vanilla CSS |
 | **Backend** | Flask 3, SQLAlchemy, JWT-Extended |
 | **Security** | OAuth 2.0, AES-GCM (Token 加密), API Rate Limiting |
-| **Android** | Capacitor 5, Java (Native Bridge) |
+| **Android** | Capacitor 5, Java (Native Bridge, AlarmManager, MediaPlayer) |
 | **Infrastructure** | Vercel, Render, PostgreSQL |
 
 ---
 
-## 🚀 快速開始
-
-### 環境變數配置
-在伺服器端設定以下變數：
-```env
-SECRET_KEY=your_key
-ENCRYPTION_KEY=your_base64_aes_key # 用於加密 Google Token
-BREVO_API_KEY=xkeysib-your_api_key
-GOOGLE_CLIENT_ID=your_id
-GOOGLE_CLIENT_SECRET=your_secret
-```
-
-### 自動化部署
-- 推送程式碼至 `main` 分支後，Vercel 與 Render 將透過配置檔案自動觸發建置流程。
-
----
-
-## ⚠️ 已知限制與未來改進 (Future Improvements)
-
-- **同步模式**：目前 Google 日曆同步採用 Polling (主動輪詢) 模式，未來計劃導入 Webhook 實現即時推送。
-- **排程機制**：後端 APScheduler 目前運行於單一實例中，若擴展為分散式架構需改用 Redis 作為 Job Store。
-- **Android 更新**：App 內更新目前為完整 APK 覆蓋，尚未支援差分更新 (Incremental Update)。
-- **離線支援**：目前尚未完全實作 PWA 離線編輯功能。
-
----
-
-## 📜 License
+## 📜 授權協議
 MIT License © 2026 TaskReminder Team
