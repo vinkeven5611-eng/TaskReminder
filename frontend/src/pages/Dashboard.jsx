@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 // Trigger redeploy for UI update verification
 import { taskAPI, googleAPI } from '../services/api';
 import TaskCard from '../components/TaskCard';
-import AlarmListModal from '../components/AlarmListModal';
+import AlarmListModal, { removeAlarmsByTitle } from '../components/AlarmListModal';
+
 import { LogOut, Plus, Search, Calendar, Inbox, Check, Clock, Settings, Trash, Bell, Loader2, X } from 'lucide-react';
 
 
@@ -24,7 +25,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "3.8"; // STREAM_ALARM Fix Version
+  const CURRENT_VERSION = "3.9"; // Alarm UX Fix Version
 
   useEffect(() => {
     // Request Notification Permission on mount
@@ -336,12 +337,16 @@ export default function Dashboard({ setAuth }) {
 
   const executeTaskDelete = async (id) => {
     try {
+      const task = tasks.find(t => t.id === id);
       await taskAPI.deleteTask(id);
       setTasks(tasks.filter(t => t.id !== id));
+      // Remove any matching alarms from localStorage (問題 4)
+      if (task?.content) removeAlarmsByTitle(task.content);
     } catch (err) {
       console.error('Delete failed:', err);
     }
   };
+
 
   const filteredTasks = tasks.filter(task => {
     if (filter === 'active') return !task.is_completed;

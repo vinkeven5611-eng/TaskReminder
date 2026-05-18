@@ -17,36 +17,47 @@ import android.os.Vibrator;
 import androidx.core.app.NotificationCompat;
 
 public class AlarmReceiver extends BroadcastReceiver {
-    // v3: fresh channel ID to bypass cached settings from previous installs
     private static final String CHANNEL_ID = "taskflow_alarms_v3";
     public static final String ACTION_DISMISS = "com.taskflow.app.ACTION_DISMISS";
+
+    // Static reference so the dismiss action can stop it
+    private static MediaPlayer activePlayer = null;
+    private static Vibrator activeVibrator = null;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         int notifId = intent.getIntExtra("notifId", 1);
 
-        // Handle dismiss action
+        // ─── Handle dismiss ───────────────────────────────────────────────
         if (ACTION_DISMISS.equals(intent.getAction())) {
             manager.cancel(notifId);
-            Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-            if (vibrator != null) vibrator.cancel();
+            // Stop MediaPlayer
+            if (activePlayer != null) {
+                try {
+                    if (activePlayer.isPlaying()) activePlayer.stop();
+                    activePlayer.release();
+                } catch (Exception ignored) {}
+                activePlayer = null;
+            }
+            // Stop Vibrator
+            if (activeVibrator != null) {
+                activeVibrator.cancel();
+                activeVibrator = null;
+            }
             return;
         }
 
+        // ─── Alarm fire ───────────────────────────────────────────────────
         String title = intent.getStringExtra("title");
         if (title == null) title = "任務提醒";
 
-        // --- KEY FIX 1: Use TYPE_ALARM URI so it goes through STREAM_ALARM ---
+        // Get alarm URI with fallback chain
         Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-        if (alarmUri == null) {
-            alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-        }
-        if (alarmUri == null) {
-            alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        }
+        if (alarmUri == null) alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        if (alarmUri == null) alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
-        // --- KEY FIX 2: AudioAttributes MUST use USAGE_ALARM to force STREAM_ALARM track ---
+        // ─── Notification Channel (USAGE_ALARM = STREAM_ALARM track) ─────
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
@@ -54,9 +65,7 @@ public class AlarmReceiver extends BroadcastReceiver {
                 .build();
 
             NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "TaskFlow 鬧鐘",
-                NotificationManager.IMPORTANCE_HIGH
+                CHANNEL_ID, "TaskFlow 鬧鐘", NotificationManager.IMPORTANCE_HIGH
             );
             channel.enableVibration(true);
             channel.enableLights(true);
@@ -66,67 +75,78 @@ public class AlarmReceiver extends BroadcastReceiver {
             manager.createNotificationChannel(channel);
         }
 
-        // Build dismiss PendingIntent
-        int currentNotifId = notifId;
+        // ─── Dismiss PendingIntent (BroadcastReceiver) ────────────────────
         Intent dismissIntent = new Intent(context, AlarmReceiver.class);
         dismissIntent.setAction(ACTION_DISMISS);
-        dismissIntent.putExtra("notifId", currentNotifId);
+        dismissIntent.putExtra("notifId", notifId);
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= 23) {
-            flags |= PendingIntent.FLAG_IMMUTABLE;
+        if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
+
+        PendingIntent dismissPI = PendingIntent.getBroadcast(context, notifId, dismissIntent, flags);
+
+        // ─── FullScreen intent → main Activity (forces heads-up popup) ────
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+        PendingIntent fullScreenPI = null;
+        if (launchIntent != null) {
+            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            fullScreenPI = PendingIntent.getActivity(context, notifId + 1000, launchIntent, flags);
         }
 
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(
-            context, currentNotifId, dismissIntent, flags
-        );
-
-        // Detect ringer mode
+        // ─── Ringer mode → choose vibration pattern ────────────────────────
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         boolean isSilent = audioManager.getRingerMode() != AudioManager.RINGER_MODE_NORMAL;
 
-        long[] silentVibration = {0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400};
-        long[] normalVibration  = {0, 500, 300, 500};
-        long[] selectedPattern  = isSilent ? silentVibration : normalVibration;
+        long[] silentVibration = {0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400};
+        long[] normalVibration  = {0, 400, 200, 400};
 
+        // ─── Build notification ───────────────────────────────────────────
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(isSilent ? "🚨 任務提醒 (震動模式)" : "⏰ 任務鬧鐘響起")
+            .setContentTitle(isSilent ? "🚨 任務提醒" : "⏰ 任務鬧鐘響起")
             .setContentText(title)
-            .setStyle(new NotificationCompat.BigTextStyle().bigText(title + "\n\n請及時處理您的任務！"))
+            // BigTextStyle forces expanded view so action button is visible immediately
+            .setStyle(new NotificationCompat.BigTextStyle()
+                .bigText("📌 " + title + "\n\n請及時處理您的任務！"))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
             .setSound(alarmUri)
-            .setVibrate(selectedPattern)
-            .setFullScreenIntent(dismissPendingIntent, true)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "【 關閉鬧鐘 】", dismissPendingIntent);
+            .setVibrate(isSilent ? silentVibration : normalVibration)
+            .setFullScreenIntent(fullScreenPI, true) // Triggers heads-up popup
+            .addAction(android.R.drawable.ic_delete, "✕  關閉鬧鐘", dismissPI);
 
-        manager.notify(currentNotifId, builder.build());
+        manager.notify(notifId, builder.build());
 
-        // --- KEY FIX 3: MediaPlayer on STREAM_ALARM as a guaranteed fallback ---
+        // ─── Play sound via MediaPlayer (STREAM_ALARM guarantees sound) ───
         if (!isSilent) {
             try {
-                final MediaPlayer mp = new MediaPlayer();
+                if (activePlayer != null) {
+                    try { activePlayer.stop(); activePlayer.release(); } catch (Exception ignored) {}
+                    activePlayer = null;
+                }
+                MediaPlayer mp = new MediaPlayer();
                 mp.setDataSource(context, alarmUri);
-                mp.setAudioStreamType(AudioManager.STREAM_ALARM); // Explicit STREAM_ALARM bypass
+                mp.setAudioStreamType(AudioManager.STREAM_ALARM);
                 mp.setLooping(false);
                 mp.prepare();
                 mp.start();
                 mp.setOnCompletionListener(MediaPlayer::release);
+                activePlayer = mp;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            // Silent/vibrate mode: loop strong vibration directly
-            Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-            if (vibrator != null && vibrator.hasVibrator()) {
+            // Silent/vibrate mode: loop strong vibration
+            Vibrator vib = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+            if (vib != null && vib.hasVibrator()) {
+                activeVibrator = vib;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createWaveform(silentVibration, 0));
+                    vib.vibrate(VibrationEffect.createWaveform(silentVibration, 0));
                 } else {
-                    vibrator.vibrate(silentVibration, 0);
+                    vib.vibrate(silentVibration, 0);
                 }
             }
         }

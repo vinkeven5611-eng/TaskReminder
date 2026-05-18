@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, Bell, BellOff } from 'lucide-react';
+import { X, BellOff } from 'lucide-react';
 
 const STORAGE_KEY = 'taskflow_alarms';
 
@@ -14,6 +14,12 @@ export function removeAlarm(id) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
 }
 
+// Remove all alarms whose title matches a task title (used when task is deleted)
+export function removeAlarmsByTitle(title) {
+  const alarms = loadAlarms().filter(a => a.title !== title);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+}
+
 export function loadAlarms() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -22,11 +28,20 @@ export function loadAlarms() {
   }
 }
 
+// Auto-remove alarms that have already fired (timestamp < now)
+function cleanExpiredAlarms() {
+  const now = Date.now();
+  const active = loadAlarms().filter(a => a.timestamp > now);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(active));
+  return active;
+}
+
 export default function AlarmListModal({ onClose }) {
   const [alarms, setAlarms] = useState([]);
 
   useEffect(() => {
-    setAlarms(loadAlarms());
+    // Clean expired alarms on open
+    setAlarms(cleanExpiredAlarms());
   }, []);
 
   const handleCancel = async (alarm) => {
@@ -41,20 +56,11 @@ export default function AlarmListModal({ onClose }) {
     setAlarms(prev => prev.filter(a => a.id !== alarm.id));
   };
 
-  const formatTime = (ts) => {
-    const d = new Date(ts);
-    return d.toLocaleString('zh-TW', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', weekday: 'short'
-    });
-  };
-
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '0'
     }} onClick={onClose}>
       <div style={{
         background: '#000',
@@ -80,7 +86,6 @@ export default function AlarmListModal({ onClose }) {
 
         {/* List */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '10px 20px' }}>
-
           {alarms.length === 0 ? (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -100,38 +105,41 @@ export default function AlarmListModal({ onClose }) {
                   borderRadius: '24px', padding: '20px 24px', marginBottom: '12px'
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    {/* Time */}
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                       <span style={{ color: '#fff', fontSize: '32px', fontWeight: '300', fontFamily: 'monospace' }}>
                         {new Date(alarm.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}
                       </span>
                       <span style={{ color: '#94a3b8', fontSize: '14px' }}>
-                        {new Date(alarm.timestamp).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}日, {new Date(alarm.timestamp).toLocaleDateString('zh-TW', { weekday: 'short' })}
+                        {new Date(alarm.timestamp).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}日，
+                        {new Date(alarm.timestamp).toLocaleDateString('zh-TW', { weekday: 'short' })}
                       </span>
                     </div>
-                    <div style={{ color: '#6366f1', fontSize: '14px', marginTop: '4px', fontWeight: '500' }}>
+                    {/* Task title — bigger font (問題 5) */}
+                    <div style={{ color: '#818cf8', fontSize: '18px', marginTop: '6px', fontWeight: '600', lineHeight: '1.4' }}>
                       {alarm.title}
                     </div>
                   </div>
-                  
+
+                  {/* Cancel toggle */}
                   <div style={{ display: 'flex', alignItems: 'center', marginLeft: '16px' }}>
                     <label className="toggle-switch">
-                      <input 
-                        type="checkbox" 
-                        checked={true} 
-                        onChange={() => handleCancel(alarm)} 
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => handleCancel(alarm)}
                       />
                       <span className="slider"></span>
                     </label>
                   </div>
                 </div>
-
               ))
           )}
         </div>
 
         <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(139,92,246,0.15)' }}>
           <p style={{ color: '#6b7280', fontSize: '11px', textAlign: 'center', margin: 0 }}>
-            響鈴後鬧鐘將自動從清單移除
+            響鈴後鬧鐘將自動從清單移除 · 已過期的鬧鐘已自動清除
           </p>
         </div>
       </div>
