@@ -25,7 +25,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "3.9"; // Alarm UX Fix Version
+  const CURRENT_VERSION = "4.0"; // Full-screen AlarmActivity Version
 
   useEffect(() => {
     // Request Notification Permission on mount

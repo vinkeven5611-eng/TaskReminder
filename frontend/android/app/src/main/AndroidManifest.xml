@@ -49,6 +49,18 @@
             android:name=".AlarmReceiver"
             android:exported="false" />
 
+        <!-- AlarmActivity: Full-screen alarm screen that stays until dismissed -->
+        <activity
+            android:name=".AlarmActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true" />
+
+
+
     </application>
 
 </manifest>
