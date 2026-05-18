@@ -25,7 +25,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "4.0"; // Full-screen AlarmActivity Version
+  const CURRENT_VERSION = "4.1"; // Full-screen Permission Fix Version
 
   useEffect(() => {
     // Request Notification Permission on mount
@@ -34,11 +34,13 @@ export default function Dashboard({ setAuth }) {
         try {
           const perms = await window.Capacitor.Plugins.AlarmPlugin.checkPermissions();
           if (!perms.notifications) {
-             // For Android 13+, if notifications are not enabled, just alert
              alert("💡 為了讓鬧鐘能正常響鈴，請務必在系統設定中開啟 TaskFlow 的『通知權限』。");
           }
           if (!perms.exactAlarm && window.confirm("偵測到『精確鬧鐘權限』未開啟，這會導致鬧鐘無法準時響起。\n現在要前往開啟嗎？")) {
              await window.Capacitor.Plugins.AlarmPlugin.requestAlarmPermission();
+          }
+          if (perms.fullScreenIntent === false && window.confirm("為了讓鬧鐘能在手機鎖定時「全螢幕」彈出，請開啟『全螢幕通知權限』。\n現在要前往開啟嗎？")) {
+             await window.Capacitor.Plugins.AlarmPlugin.requestFullScreenPermission();
           }
         } catch (e) {
           console.error("Permission check failed", e);

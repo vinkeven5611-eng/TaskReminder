@@ -122,8 +122,15 @@ public class AlarmPlugin extends Plugin {
             exactAlarmEnabled = alarmManager.canScheduleExactAlarms();
         }
 
+        boolean fullScreenIntentEnabled = true;
+        if (Build.VERSION.SDK_INT >= 34) {
+            android.app.NotificationManager nm = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            fullScreenIntentEnabled = nm.canUseFullScreenIntent();
+        }
+
         ret.put("notifications", notificationEnabled);
         ret.put("exactAlarm", exactAlarmEnabled);
+        ret.put("fullScreenIntent", fullScreenIntentEnabled);
         call.resolve(ret);
     }
 
@@ -132,12 +139,19 @@ public class AlarmPlugin extends Plugin {
         if (Build.VERSION.SDK_INT >= 31) {
             Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
             getContext().startActivity(intent);
-            call.resolve();
-        } else {
-            call.resolve();
         }
+        call.resolve();
     }
 
+    @PluginMethod
+    public void requestFullScreenPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= 34) {
+            Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
+            intent.setData(android.net.Uri.parse("package:" + getContext().getPackageName()));
+            getContext().startActivity(intent);
+        }
+        call.resolve();
+    }
 
     @PluginMethod
     public void installApk(PluginCall call) {
