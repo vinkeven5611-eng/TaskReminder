@@ -3,6 +3,8 @@ package com.taskflow.app;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
@@ -21,6 +23,9 @@ public class AlarmActivity extends Activity {
 
     private MediaPlayer mediaPlayer;
     private Vibrator vibrator;
+    private AudioManager audioManager;
+    private AudioFocusRequest focusRequest;
+    private AudioManager.OnAudioFocusChangeListener focusChangeListener;
 
     // Static reference so AlarmReceiver can stop us from outside
     private static AlarmActivity instance = null;
@@ -68,19 +73,70 @@ public class AlarmActivity extends Activity {
             btnDismiss.setOnClickListener(v -> dismissAlarm());
         }
 
+        // ─── AudioManager & Audio Focus Setup ─────────────────────────────
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        
+        focusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                if (mediaPlayer != null) {
+                    switch (focusChange) {
+                        case AudioManager.AUDIOFOCUS_LOSS:
+                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                            // 當失去焦點或被通知 Duck 時，強制再次啟動播放並重設最大音量
+                            try {
+                                if (!mediaPlayer.isPlaying()) {
+                                    mediaPlayer.start();
+                                }
+                                mediaPlayer.setVolume(1.0f, 1.0f);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case AudioManager.AUDIOFOCUS_GAIN:
+                            try {
+                                if (!mediaPlayer.isPlaying()) {
+                                    mediaPlayer.start();
+                                }
+                                mediaPlayer.setVolume(1.0f, 1.0f);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                    }
+                }
+            }
+        };
+
         // ─── Sound & vibration ────────────────────────────────────────────
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        boolean isSilent = (am != null && am.getRingerMode() != AudioManager.RINGER_MODE_NORMAL);
+        boolean isSilent = (audioManager != null && audioManager.getRingerMode() != AudioManager.RINGER_MODE_NORMAL);
 
         if (!isSilent) {
             try {
                 Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
                 if (alarmUri == null) alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                
                 mediaPlayer = new MediaPlayer();
                 mediaPlayer.setDataSource(this, alarmUri);
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_ALARM);
+                
+                // Configure MediaPlayer Audio Attributes
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    AudioAttributes attributes = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                    mediaPlayer.setAudioAttributes(attributes);
+                } else {
+                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_ALARM);
+                }
+                
                 mediaPlayer.setLooping(true);
                 mediaPlayer.prepare();
+
+                // Request Exclusive Audio Focus before playing
+                requestExclusiveAudioFocus();
+
                 mediaPlayer.start();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -98,7 +154,58 @@ public class AlarmActivity extends Activity {
         }
     }
 
+    private void requestExclusiveAudioFocus() {
+        if (audioManager == null) return;
+        
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioAttributes attributes = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+                
+                focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                        .setAudioAttributes(attributes)
+                        .setAcceptsDelayedFocusGain(false)
+                        .setOnAudioFocusChangeListener(focusChangeListener)
+                        .build();
+                
+                audioManager.requestAudioFocus(focusRequest);
+            } else {
+                audioManager.requestAudioFocus(
+                        focusChangeListener,
+                        AudioManager.STREAM_ALARM,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void abandonExclusiveAudioFocus() {
+        if (audioManager == null) return;
+        
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (focusRequest != null) {
+                    audioManager.abandonAudioFocusRequest(focusRequest);
+                    focusRequest = null;
+                }
+            } else {
+                if (focusChangeListener != null) {
+                    audioManager.abandonAudioFocus(focusChangeListener);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void dismissAlarm() {
+        // Abandon Audio Focus first
+        abandonExclusiveAudioFocus();
+
         // Stop sound
         if (mediaPlayer != null) {
             try {
@@ -130,6 +237,10 @@ public class AlarmActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         instance = null;
+        
+        // Abandon Audio Focus
+        abandonExclusiveAudioFocus();
+
         // Safety net
         if (mediaPlayer != null) {
             try { mediaPlayer.release(); } catch (Exception ignored) {}

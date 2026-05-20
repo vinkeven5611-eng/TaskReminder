@@ -25,7 +25,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "4.1"; // Full-screen Permission Fix Version
+  const CURRENT_VERSION = "4.2"; // Audio Focus Notification Interruption Fix
 
   useEffect(() => {
     // Request Notification Permission on mount
