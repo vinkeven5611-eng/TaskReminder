@@ -113,5 +113,26 @@ graph TD
 
 ---
 
+## 🚀 APK 發布與更新流程 (Release Workflow)
+
+為了確保網頁版下載連結與 App 「自動檢查更新」功能皆能順利安裝最新版，請在每次修改原生 App 代碼後，嚴格遵循以下發布步驟：
+
+1. **推送代碼觸發 CI 打包**：
+   - 每次修改原生代碼（例如 `AlarmActivity.java`）或調整版本號後，直接 `git commit` 並 `git push` 到 `main` 分支。
+   - GitHub Actions 會自動執行 `Build Android APK` 工作流進行雲端編譯。
+2. **下載 GitHub 編譯完成的 APK**：
+   - 到 GitHub 專案的 **Actions** 頁面，點擊最新一次的 Build 紀錄。
+   - 捲動到頁面底部，在 **Artifacts** 下載名為 **`TaskFlow-Android-App`** 的壓縮檔。
+3. **覆蓋網頁端的靜態 APK 檔案**：
+   - 將壓縮檔解壓縮得到 `app-debug.apk`。
+   - 將檔案改名為 **`TaskFlow.apk`**。
+   - 覆蓋至本機目錄中的 **`frontend/public/TaskFlow.apk`**。
+4. **提交最新 APK 完成網站部署**：
+   - 將覆蓋後的最新 `TaskFlow.apk` 加入 Git：`git commit -am "chore: update latest built APK for vX.X release"`。
+   - 再次 `git push`，前端網頁與自動更新服務即會發布最新版本！
+
+---
+
 ## 📜 授權協議
 MIT License © 2026 TaskReminder Team
+
