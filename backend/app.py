@@ -25,10 +25,26 @@ load_dotenv()
 app = Flask(__name__)
 # Config
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key-123')
-# Fix for Render/Heroku which may give postgres:// instead of postgresql://
-database_url = os.getenv('DATABASE_URL', 'sqlite:///taskflow.db')
-if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+import socket
+from urllib.parse import urlparse
+
+def get_database_uri():
+    raw_url = os.getenv('DATABASE_URL', 'sqlite:///taskflow.db')
+    if raw_url.startswith('postgres://'):
+        raw_url = raw_url.replace('postgres://', 'postgresql://', 1)
+    
+    if raw_url.startswith('postgresql://'):
+        try:
+            parsed = urlparse(raw_url)
+            if parsed.hostname:
+                socket.gethostbyname(parsed.hostname)
+            return raw_url
+        except Exception as e:
+            print(f"[Warning] PostgreSQL host '{parsed.hostname if 'parsed' in locals() else 'unknown'}' unreachable ({e}). Falling back to local SQLite.")
+            return 'sqlite:///taskflow.db'
+    return raw_url
+
+database_url = get_database_uri()
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -65,7 +81,10 @@ limiter = Limiter(
 )
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"[Warning] db.create_all() encountered error: {e}")
 
 # --- Email & Scheduler Setup ---
 logging.basicConfig(level=logging.INFO)
