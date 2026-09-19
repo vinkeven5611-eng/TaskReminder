@@ -347,13 +347,21 @@ def get_google_url():
         return jsonify({'message': str(e)}), 400
 
 @app.route('/api/auth/google/callback', methods=['POST'])
-@jwt_required()
+@jwt_required(optional=True)
 def google_callback():
     user_id = get_jwt_identity()
-    data = request.get_json()
+    data = request.get_json() or {}
     code = data.get('code')
+    state = data.get('state')
     redirect_uri = data.get('redirect_uri', 'http://localhost:5173/dashboard')
     
+    # Fallback to state (user_id) when callback is opened in mobile external browser without prior login
+    if not user_id and state:
+        user_id = str(state)
+        
+    if not user_id:
+        return jsonify({'message': '未授權的使用者身分或無效的驗證狀態'}), 401
+        
     if not code:
         return jsonify({'message': 'Missing code'}), 400
         
@@ -362,6 +370,9 @@ def google_callback():
         refresh_token = creds.get('refresh_token')
         
         user = User.query.get(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
         if refresh_token:
             user.google_refresh_token_encrypted = calendar_sync.encrypt_token(refresh_token)
             # Fetch and store Google email

@@ -106,14 +106,15 @@ export const googleAPI = {
     if (!res.ok) throw new Error('Failed to get Google Auth URL');
     return res.json();
   },
-  callback: async (code, redirectUri) => {
+  callback: async (code, redirectUri, state) => {
     const res = await fetch(`${BASE_URL}/auth/google/callback`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ code, redirect_uri: redirectUri })
+      body: JSON.stringify({ code, redirect_uri: redirectUri, state })
     });
-    if (!res.ok) throw new Error('Failed to link Google account');
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to link Google account');
+    return data;
   },
   getStatus: async () => {
     const res = await fetch(`${BASE_URL}/auth/google/status`, { headers: getAuthHeaders() });

@@ -60,14 +60,29 @@ export default function Dashboard({ setAuth }) {
     // Handle OAuth Callback
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
+    const state = urlParams.get('state');
     if (code && !callbackHandled.current) {
       callbackHandled.current = true;
-      handleGoogleCallback(code);
+      handleGoogleCallback(code, state);
     }
 
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
       Notification.requestPermission();
     }
+
+    // Auto refresh Google status when returning from external browser
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkGoogleStatus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', checkGoogleStatus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', checkGoogleStatus);
+    };
   }, []);
 
   const REDIRECT_URI = window.location.origin + '/dashboard';
@@ -81,29 +96,39 @@ export default function Dashboard({ setAuth }) {
     }
   };
 
-  const handleGoogleCallback = async (code) => {
+  const handleGoogleCallback = async (code, state) => {
     try {
       setIsLinking(true);
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
       const redirectUri = window.location.origin + window.location.pathname;
-      const result = await googleAPI.callback(code, redirectUri);
+      const result = await googleAPI.callback(code, redirectUri, state);
       setGoogleStatus({ is_linked: true, is_calendar_enabled: result.is_calendar_enabled, google_email: result.google_email });
-      alert('Google 日曆連結成功！');
+      alert('🎉 Google 日曆連結成功！若您是從手機 App 開啟，請返回 App 即可開始同步。');
     } catch (err) {
-      alert('連結失敗，請重試！');
+      alert('連結失敗，請重試！' + (err.message ? ` (${err.message})` : ''));
     } finally {
       setIsLinking(false);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   };
 
   const handleLinkGoogle = async () => {
     try {
-      const redirectUri = window.location.origin + window.location.pathname;
+      const isNative = !!(window.Capacitor?.isNativePlatform?.());
+      // On native mobile app, use the official registered Web domain to satisfy Google OAuth security
+      const redirectUri = isNative
+        ? 'https://task-reminder-omega-five.vercel.app/dashboard'
+        : (window.location.origin + window.location.pathname);
+
       const { url } = await googleAPI.getAuthUrl(redirectUri);
-      window.location.href = url;
+
+      if (isNative) {
+        // Open in external system browser (Chrome) to bypass Google's 403 disallowed_useragent in WebView
+        window.open(url, '_system');
+      } else {
+        window.location.href = url;
+      }
     } catch (err) {
-      alert('無法獲取授權網址');
+      alert('無法獲取授權網址：' + (err.message || '請稍後重試'));
     }
   };
 

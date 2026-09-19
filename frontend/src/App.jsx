@@ -40,6 +40,8 @@ function App() {
     </div>
   )
 
+  const isOAuthCallback = typeof window !== 'undefined' && window.location.search.includes('code=');
+
   return (
     <BrowserRouter>
       <Routes>
@@ -47,7 +49,7 @@ function App() {
           isAuthenticated ? <Navigate to="/dashboard" /> : <Auth setAuth={setIsAuthenticated} />
         } />
         <Route path="/dashboard" element={
-          isAuthenticated ? <Dashboard setAuth={setIsAuthenticated} /> : <Navigate to="/" />
+          (isAuthenticated || isOAuthCallback) ? <Dashboard setAuth={setIsAuthenticated} /> : <Navigate to="/" />
         } />
       </Routes>
     </BrowserRouter>
