@@ -60,6 +60,10 @@ export default function Auth({ setAuth }) {
         localStorage.setItem('taskflow_username', data.username);
         setAuth(true);
       } else if (data.status === 'pending_verification') {
+        if (data.dev_code) {
+          setCode(data.dev_code);
+          setError(data.message || `發信服務建置中，您的驗證碼為：${data.dev_code}`);
+        }
         setStep(2);
       }
     } catch (err) {

@@ -90,49 +90,75 @@ with app.app_context():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 BREVO_API_KEY = os.getenv('BREVO_API_KEY')
-SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'vinkeven5611@gmail.com')
+SENDER_EMAIL = os.getenv('SENDER_EMAIL', os.getenv('SMTP_USERNAME', 'vinkeven5611@gmail.com'))
 SENDER_NAME = "TaskFlow"
 
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
 SMTP_USERNAME = os.getenv('SMTP_USERNAME', '')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
-SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'noreply@taskflow.local')
+
+def send_smtp_email(to_email, subject, html_content):
+    if not (SMTP_USERNAME and SMTP_PASSWORD):
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = SENDER_EMAIL or SMTP_USERNAME
+        msg["To"] = to_email
+        msg.attach(MIMEText(html_content, "html"))
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.sendmail(msg["From"], [to_email], msg.as_string())
+        logger.info(f"Email sent successfully to {to_email} via SMTP")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email via SMTP: {e}")
+        return False
 
 def send_reminder_email(to_email, task_name, due_date, message):
-    if not BREVO_API_KEY:
-        logger.info(f"[Mock Email] To: {to_email} | Task: {task_name} | Due: {due_date} | Message: {message}")
-        return
+    html_content = f"""
+        <div style='font-family: sans-serif; padding: 20px; color: #333;'>
+            <h2 style='color: #4f46e5;'>任務提醒</h2>
+            <p><strong>任務名稱：</strong>{task_name}</p>
+            <p><strong>截止時間：</strong>{due_date}</p>
+            <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+            <p>{message}</p>
+        </div>
+    """
+    if BREVO_API_KEY:
+        try:
+            url = "https://api.brevo.com/v3/smtp/email"
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "api-key": BREVO_API_KEY
+            }
+            payload = {
+                "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
+                "to": [{"email": to_email}],
+                "subject": "TaskFlow 任務提醒",
+                "htmlContent": html_content
+            }
+            res = requests.post(url, json=payload, headers=headers, timeout=10)
+            if res.status_code in [200, 201, 202]:
+                logger.info(f"Reminder email sent to {to_email} via Brevo")
+                return True
+        except Exception as e:
+            logger.error(f"Brevo API error: {e}")
 
-    try:
-        url = "https://api.brevo.com/v3/smtp/email"
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "api-key": BREVO_API_KEY
-        }
-        payload = {
-            "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
-            "to": [{"email": to_email}],
-            "subject": "TaskFlow 任務提醒",
-            "htmlContent": f"""
-                <div style='font-family: sans-serif; padding: 20px; color: #333;'>
-                    <h2 style='color: #4f46e5;'>任務提醒</h2>
-                    <p><strong>任務名稱：</strong>{task_name}</p>
-                    <p><strong>截止時間：</strong>{due_date}</p>
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
-                    <p>{message}</p>
-                </div>
-            """
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code in [200, 201, 202]:
-            logger.info(f"Email sent successfully to {to_email} via Brevo")
-        else:
-            logger.error(f"Brevo API error: {response.text}")
-    except Exception as e:
-        logger.error(f"Failed to send email via Brevo: {e}")
+    if SMTP_USERNAME and SMTP_PASSWORD:
+        return send_smtp_email(to_email, "TaskFlow 任務提醒", html_content)
+    
+    logger.info(f"[Mock Email] To: {to_email} | Task: {task_name} | Due: {due_date}")
+    return False
 
 pending_verifications = {}
 
@@ -140,39 +166,44 @@ def generate_verification_code():
     return f"{random.randint(0, 9999):04d}"
 
 def send_verification_email(to_email, code):
-    if not BREVO_API_KEY:
-        logger.info(f"[Mock Email] To: {to_email} | Code: {code}")
-        return
-        
-    try:
-        url = "https://api.brevo.com/v3/smtp/email"
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "api-key": BREVO_API_KEY
-        }
-        payload = {
-            "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
-            "to": [{"email": to_email}],
-            "subject": "TaskFlow 驗證碼",
-            "htmlContent": f"""
-                <div style='font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px;'>
-                    <h2 style='color: #4f46e5; text-align: center;'>驗證您的帳號</h2>
-                    <p style='font-size: 16px;'>您的驗證碼是：</p>
-                    <div style='background: #f4f4f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #111;'>
-                        {code}
-                    </div>
-                    <p style='font-size: 14px; color: #666; margin-top: 20px;'>請輸入此驗證碼以繼續。驗證碼將在 10 分鐘後過期。</p>
-                </div>
-            """
-        }
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code in [200, 201, 202]:
-            logger.info(f"Verification email sent to {to_email} via Brevo")
-        else:
-            logger.error(f"Brevo API error: {response.text}")
-    except Exception as e:
-        logger.error(f"Failed to send verification email via Brevo: {e}")
+    html_content = f"""
+        <div style='font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px;'>
+            <h2 style='color: #4f46e5; text-align: center;'>驗證您的帳號</h2>
+            <p style='font-size: 16px;'>您的驗證碼是：</p>
+            <div style='background: #f4f4f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #111;'>
+                {code}
+            </div>
+            <p style='font-size: 14px; color: #666; margin-top: 20px;'>請輸入此驗證碼以繼續。驗證碼將在 10 分鐘後過期。</p>
+        </div>
+    """
+    if BREVO_API_KEY:
+        try:
+            url = "https://api.brevo.com/v3/smtp/email"
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "api-key": BREVO_API_KEY
+            }
+            payload = {
+                "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
+                "to": [{"email": to_email}],
+                "subject": "TaskFlow 驗證碼",
+                "htmlContent": html_content
+            }
+            res = requests.post(url, json=payload, headers=headers, timeout=10)
+            if res.status_code in [200, 201, 202]:
+                logger.info(f"Verification email sent to {to_email} via Brevo")
+                return True
+            else:
+                logger.error(f"Brevo API error: {res.text}")
+        except Exception as e:
+            logger.error(f"Failed to send verification email via Brevo: {e}")
+
+    if SMTP_USERNAME and SMTP_PASSWORD:
+        return send_smtp_email(to_email, "TaskFlow 驗證碼", html_content)
+
+    logger.info(f"[Mock/Fallback] Verification Code for {to_email}: {code}")
+    return False
 
 def to_utc_iso(dt):
     if not dt: return None
@@ -264,9 +295,9 @@ def get_stats():
 
 # --- Auth Routes ---
 @app.route('/api/register', methods=['POST'])
-@limiter.limit("3 per minute")  # 同一 IP 每分鐘最多嘗試 3 次
+@limiter.limit("10 per minute")
 def register():
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get('email')
     password = data.get('password')
     
@@ -277,7 +308,7 @@ def register():
         return jsonify({'message': '此帳號已存在，請直接登入'}), 400
         
     code = generate_verification_code()
-    send_verification_email(email, code)
+    sent = send_verification_email(email, code)
     
     pending_verifications[email] = {
         'code': code,
@@ -286,12 +317,17 @@ def register():
         'expires_at': datetime.utcnow() + timedelta(minutes=10)
     }
     
-    return jsonify({'status': 'pending_verification'}), 200
+    res_data = {'status': 'pending_verification'}
+    if not sent:
+        res_data['dev_code'] = code
+        res_data['message'] = f'發信服務尚未配置完成，測試驗證碼為：{code}'
+        
+    return jsonify(res_data), 200
 
 @app.route('/api/login', methods=['POST'])
-@limiter.limit("5 per minute")  # 同一 IP 每分鐘最多嘗試 5 次
+@limiter.limit("15 per minute")
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
     email = data.get('email')
     password = data.get('password')
     
@@ -304,7 +340,7 @@ def login():
         return jsonify({'status': 'success', 'token': access_token, 'username': user.email.split('@')[0]}), 200
         
     code = generate_verification_code()
-    send_verification_email(email, code)
+    sent = send_verification_email(email, code)
     
     pending_verifications[email] = {
         'code': code,
@@ -312,7 +348,12 @@ def login():
         'expires_at': datetime.utcnow() + timedelta(minutes=10)
     }
     
-    return jsonify({'status': 'pending_verification'}), 200
+    res_data = {'status': 'pending_verification'}
+    if not sent:
+        res_data['dev_code'] = code
+        res_data['message'] = f'發信服務尚未配置完成，測試驗證碼為：{code}'
+        
+    return jsonify(res_data), 200
 
 @app.route('/api/verify-code', methods=['POST'])
 @limiter.limit("10 per minute")  # 防止暴力嘗試驗證碼
