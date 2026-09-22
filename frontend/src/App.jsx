@@ -40,7 +40,7 @@ function App() {
     </div>
   )
 
-  const isOAuthCallback = typeof window !== 'undefined' && window.location.search.includes('code=');
+  const isOAuthCallback = typeof window !== 'undefined' && window.location.pathname.includes('/dashboard') && window.location.search.includes('code=');
 
   return (
     <BrowserRouter>

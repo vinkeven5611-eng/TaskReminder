@@ -8,6 +8,20 @@ function getAuthHeaders() {
   };
 }
 
+// 全局 401 攔截：token 過期時自動清除並重新整理到登入頁
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    localStorage.removeItem('taskflow_token');
+    localStorage.removeItem('taskflow_username');
+    // 強制回到登入頁（重整）
+    window.location.href = '/';
+    // 拋出錯誤阻止後續處理
+    throw new Error('SESSION_EXPIRED');
+  }
+  return res;
+}
+
 export const authAPI = {
   login: async (email, password) => {
     const res = await fetch(`${BASE_URL}/login`, {
@@ -43,21 +57,24 @@ export const authAPI = {
 
 export const taskAPI = {
   getTasks: async () => {
-    const res = await fetch(`${BASE_URL}/tasks`, { headers: getAuthHeaders() });
+    const res = await apiFetch(`${BASE_URL}/tasks`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch tasks');
     return res.json();
   },
   createTask: async (data) => {
-    const res = await fetch(`${BASE_URL}/tasks`, {
+    const res = await apiFetch(`${BASE_URL}/tasks`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to create task');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to create task');
+    }
     return res.json();
   },
   updateTask: async (id, data) => {
-    const res = await fetch(`${BASE_URL}/tasks/${id}`, {
+    const res = await apiFetch(`${BASE_URL}/tasks/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data)
@@ -66,7 +83,7 @@ export const taskAPI = {
     return res.json();
   },
   deleteTask: async (id) => {
-    const res = await fetch(`${BASE_URL}/tasks/${id}`, {
+    const res = await apiFetch(`${BASE_URL}/tasks/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -74,7 +91,7 @@ export const taskAPI = {
     return res.json();
   },
   updateNotifyStatus: async (id, data) => {
-    const res = await fetch(`${BASE_URL}/tasks/${id}/notify-status`, {
+    const res = await apiFetch(`${BASE_URL}/tasks/${id}/notify-status`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data)
@@ -83,7 +100,7 @@ export const taskAPI = {
     return res.json();
   },
   getTaskAlarms: async (id) => {
-    const res = await fetch(`${BASE_URL}/tasks/${id}/alarm-times`, {
+    const res = await apiFetch(`${BASE_URL}/tasks/${id}/alarm-times`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -102,12 +119,12 @@ export const statsAPI = {
 
 export const googleAPI = {
   getAuthUrl: async (redirectUri) => {
-    const res = await fetch(`${BASE_URL}/auth/google/url?redirect_uri=${encodeURIComponent(redirectUri)}`, { headers: getAuthHeaders() });
+    const res = await apiFetch(`${BASE_URL}/auth/google/url?redirect_uri=${encodeURIComponent(redirectUri)}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to get Google Auth URL');
     return res.json();
   },
   callback: async (code, redirectUri, state) => {
-    const res = await fetch(`${BASE_URL}/auth/google/callback`, {
+    const res = await apiFetch(`${BASE_URL}/auth/google/callback`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ code, redirect_uri: redirectUri, state })
@@ -117,12 +134,12 @@ export const googleAPI = {
     return data;
   },
   getStatus: async () => {
-    const res = await fetch(`${BASE_URL}/auth/google/status`, { headers: getAuthHeaders() });
+    const res = await apiFetch(`${BASE_URL}/auth/google/status`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to get Google status');
     return res.json();
   },
   toggleSync: async (enabled) => {
-    const res = await fetch(`${BASE_URL}/auth/google/toggle`, {
+    const res = await apiFetch(`${BASE_URL}/auth/google/toggle`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ enabled })
@@ -131,7 +148,7 @@ export const googleAPI = {
     return res.json();
   },
   unlink: async () => {
-    const res = await fetch(`${BASE_URL}/auth/google/unlink`, {
+    const res = await apiFetch(`${BASE_URL}/auth/google/unlink`, {
       method: 'POST',
       headers: getAuthHeaders()
     });
@@ -139,7 +156,7 @@ export const googleAPI = {
     return res.json();
   },
   syncTasks: async () => {
-    const res = await fetch(`${BASE_URL}/auth/google/sync`, {
+    const res = await apiFetch(`${BASE_URL}/auth/google/sync`, {
       method: 'POST',
       headers: getAuthHeaders()
     });

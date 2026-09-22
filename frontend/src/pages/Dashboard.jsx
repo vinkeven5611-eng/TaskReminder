@@ -70,18 +70,16 @@ export default function Dashboard({ setAuth }) {
       Notification.requestPermission();
     }
 
-    // Auto refresh Google status when returning from external browser
+    // Auto refresh Google status when returning from external browser (e.g. after Google OAuth)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         checkGoogleStatus();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('focus', checkGoogleStatus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('focus', checkGoogleStatus);
     };
   }, []);
 
@@ -195,12 +193,10 @@ export default function Dashboard({ setAuth }) {
       }
     };
     
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
-      window.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [googleStatus.is_calendar_enabled, googleStatus.is_linked]);
 
@@ -286,9 +282,7 @@ export default function Dashboard({ setAuth }) {
       const data = await taskAPI.getTasks();
       setTasks(data);
     } catch (err) {
-      if (err.message.includes('token') || err.message.includes('fetch') || err.message.includes('tasks')) {
-         handleLogout(); 
-      }
+      console.error('Failed to fetch tasks:', err);
     }
   };
 
@@ -296,17 +290,10 @@ export default function Dashboard({ setAuth }) {
     setConfirmData({ type: 'logout' });
   };
 
-
-
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTaskContent.trim()) {
       alert('請先輸入你要設定的任務內容！');
-      return;
-    }
-
-    if (!newTaskDueDate) {
-      alert('請記得點擊日曆圖示設定「任務截止時間」！');
       return;
     }
     
@@ -317,8 +304,9 @@ export default function Dashboard({ setAuth }) {
       setNewTaskContent('');
       setNewTaskDueDate('');
     } catch (err) {
-      alert('新增失敗，您的登入狀態可能已過期，請重新登入！');
-      handleLogout();
+      if (err.message !== 'SESSION_EXPIRED') {
+        alert('新增失敗：' + (err.message || '請確認網路連線或稍後重試'));
+      }
     }
   };
 
@@ -351,6 +339,7 @@ export default function Dashboard({ setAuth }) {
         localStorage.removeItem('taskflow_token');
         localStorage.removeItem('taskflow_username');
         setAuth(false);
+        window.location.href = '/';
       }
       setConfirmData(null);
     }
@@ -667,7 +656,7 @@ export default function Dashboard({ setAuth }) {
       </div>
       {/* Confirmation Modal */}
       {confirmData && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content fade-in" style={{ textAlign: 'center', maxWidth: '400px' }}>
             <div style={{ 
               width: '60px', 

@@ -517,7 +517,10 @@ def google_sync():
 @jwt_required()
 def get_tasks():
     user_id = get_jwt_identity()
-    tasks = Task.query.filter_by(user_id=user_id).order_by(Task.created_at.desc()).all()
+    user = get_current_user(user_id)
+    if not user:
+        return jsonify([]), 200
+    tasks = Task.query.filter_by(user_id=user.id).order_by(Task.created_at.desc()).all()
     result = []
     for task in tasks:
         result.append({
@@ -539,7 +542,11 @@ def get_tasks():
 @jwt_required()
 def create_task():
     user_id = get_jwt_identity()
-    data = request.get_json()
+    user = get_current_user(user_id)
+    if not user:
+        return jsonify({'message': '使用者不存在或已過期，請重新登入'}), 401
+        
+    data = request.get_json() or {}
     content = data.get('content')
     due_date_str = data.get('due_date')
     
@@ -549,17 +556,19 @@ def create_task():
     if due_date_str:
         if due_date_str.endswith('Z'):
             due_date_str = due_date_str[:-1]
-        due_date = datetime.fromisoformat(due_date_str)
+        try:
+            due_date = datetime.fromisoformat(due_date_str)
+        except Exception:
+            due_date = None
     else:
         due_date = None
         
-    new_task = Task(user_id=user_id, content=content.strip(), due_date=due_date)
+    new_task = Task(user_id=user.id, content=content.strip(), due_date=due_date)
     db.session.add(new_task)
     db.session.commit()
     
     # Google Calendar Sync
-    user = get_current_user(user_id)
-    if user and user.is_calendar_enabled and user.google_refresh_token_encrypted:
+    if user.is_calendar_enabled and user.google_refresh_token_encrypted:
         try:
             refresh_token = calendar_sync.decrypt_token(user.google_refresh_token_encrypted)
             event_id = calendar_sync.sync_task_to_google(refresh_token, new_task, action='create')
@@ -586,7 +595,10 @@ def create_task():
 @jwt_required()
 def update_task(task_id):
     user_id = get_jwt_identity()
-    task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    user = get_current_user(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    task = Task.query.filter_by(id=task_id, user_id=user.id).first()
     
     if not task:
         return jsonify({'message': 'Task not found'}), 404
@@ -733,7 +745,10 @@ def get_task_alarm_times(task_id):
 @jwt_required()
 def delete_task(task_id):
     user_id = get_jwt_identity()
-    task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    user = get_current_user(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    task = Task.query.filter_by(id=task_id, user_id=user.id).first()
     
     if not task:
         return jsonify({'message': 'Task not found'}), 404

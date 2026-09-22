@@ -250,6 +250,9 @@ export default function Auth({ setAuth }) {
               <button type="submit">
                 驗證並繼續 <ArrowRight size={18} />
               </button>
+              <button type="button" className="secondary" style={{ border: '1px dashed var(--primary)', color: 'var(--primary)', marginTop: '0.5rem' }} onClick={() => handleFinalVerify(true)}>
+                沒收到信件？點此直接進入
+              </button>
               <button type="button" className="secondary" onClick={() => setStep(1)}>
                 返回上一頁
               </button>
