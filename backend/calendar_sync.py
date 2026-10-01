@@ -2,6 +2,8 @@ import os
 from datetime import datetime, timezone, timedelta
 from cryptography.fernet import Fernet
 from google.oauth2.credentials import Credentials
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 import json
@@ -12,6 +14,13 @@ SCOPES = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/userinfo.email',
     'openid'
+]
+
+# Scopes needed only for Sign-In (no calendar access)
+SIGNIN_SCOPES = [
+    'openid',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
 ]
 
 def _get_default_secret():
@@ -90,6 +99,47 @@ def exchange_code(code: str, redirect_uri: str, user_id: str = None, stored_veri
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
+
+def get_google_signin_url(redirect_uri: str) -> str:
+    """Generates a Google OAuth URL for Sign-In only (no calendar access).
+    Uses 'signin' as the state so we can distinguish from calendar OAuth."""
+    flow = Flow.from_client_config(get_client_config(), scopes=SIGNIN_SCOPES)
+    flow.redirect_uri = redirect_uri
+    authorization_url, _ = flow.authorization_url(
+        access_type='online',
+        state='signin',
+        prompt='select_account',  # Force account picker even if already signed in
+    )
+    return authorization_url
+
+
+def exchange_signin_code(code: str, redirect_uri: str) -> dict:
+    """Exchanges an auth code (web OAuth) for user info. Returns {'email': ..., 'name': ...}."""
+    flow = Flow.from_client_config(get_client_config(), scopes=SIGNIN_SCOPES)
+    flow.redirect_uri = redirect_uri
+    flow.fetch_token(code=code)
+    credentials = flow.credentials
+    # Use the access token to get user info
+    import requests
+    resp = requests.get(
+        'https://www.googleapis.com/oauth2/v3/userinfo',
+        headers={'Authorization': f'Bearer {credentials.token}'}
+    )
+    resp.raise_for_status()
+    info = resp.json()
+    return {'email': info.get('email'), 'name': info.get('name', '')}
+
+
+def verify_google_id_token(token: str) -> dict:
+    """Verifies a Google ID Token from Android native Sign-In.
+    Returns {'email': ..., 'name': ...} or raises Exception."""
+    client_id = os.getenv('GOOGLE_CLIENT_ID', _get_default_client_id())
+    request = google_requests.Request()
+    id_info = google_id_token.verify_oauth2_token(token, request, client_id)
+    if id_info.get('iss') not in ('accounts.google.com', 'https://accounts.google.com'):
+        raise ValueError('Invalid token issuer')
+    return {'email': id_info.get('email'), 'name': id_info.get('name', '')}
+
 
 def get_calendar_service(refresh_token: str):
     """Builds the Google Calendar API service using the refresh token."""

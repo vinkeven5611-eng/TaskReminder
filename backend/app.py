@@ -300,17 +300,7 @@ def get_current_user(user_id):
         uid = int(user_id)
     except (ValueError, TypeError):
         return None
-    user = User.query.get(uid)
-    if not user:
-        try:
-            user = User(id=uid, email=f"user_{uid}@taskflow.app", password_hash="auto_restored", skip_2fa=True)
-            db.session.add(user)
-            db.session.commit()
-            logger.info(f"Auto-restored user session id {uid}")
-        except Exception as e:
-            db.session.rollback()
-            user = User.query.get(uid)
-    return user
+    return User.query.get(uid)
 
 # --- Auth Routes ---
 @app.route('/api/register', methods=['POST'])
@@ -382,6 +372,67 @@ def verify_code():
         return jsonify({'status': 'success', 'token': access_token, 'username': user.email.split('@')[0]}), 200
         
     return jsonify({'message': '請重新登入'}), 400
+
+# --- Google Sign-In Routes (No JWT required, for login page) ---
+@app.route('/api/auth/google/signin-url', methods=['GET'])
+def get_google_signin_url():
+    """Returns Google OAuth URL for Sign-In (web only). No JWT required."""
+    redirect_uri = request.args.get('redirect_uri', 'https://task-reminder-omega-five.vercel.app')
+    try:
+        url = calendar_sync.get_google_signin_url(redirect_uri)
+        return jsonify({'url': url}), 200
+    except Exception as e:
+        logger.error(f"Error getting Google signin URL: {e}")
+        return jsonify({'message': str(e)}), 400
+
+@app.route('/api/auth/google/signin-verify', methods=['POST'])
+@limiter.limit("20 per minute")
+def google_signin_verify():
+    """Verifies Google Sign-In. Accepts either id_token (Android) or code (web).
+    Finds or creates user account, returns JWT token."""
+    data = request.get_json() or {}
+    id_token = data.get('id_token')
+    code = data.get('code')
+    redirect_uri = data.get('redirect_uri', 'https://task-reminder-omega-five.vercel.app')
+
+    try:
+        if id_token:
+            # Android native Sign-In path
+            user_info = calendar_sync.verify_google_id_token(id_token)
+        elif code:
+            # Web OAuth redirect path
+            user_info = calendar_sync.exchange_signin_code(code, redirect_uri)
+        else:
+            return jsonify({'message': '缺少 id_token 或 code'}), 400
+
+        email = user_info.get('email')
+        if not email:
+            return jsonify({'message': '無法取得 Google 帳號 Email'}), 400
+
+        # Find or create user
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Auto-create account linked to Google
+            user = User(
+                email=email,
+                password_hash='google_oauth_user',
+                skip_2fa=True
+            )
+            db.session.add(user)
+            db.session.commit()
+            logger.info(f"Auto-created Google Sign-In user: {email}")
+
+        access_token = create_access_token(identity=str(user.id))
+        return jsonify({
+            'status': 'success',
+            'token': access_token,
+            'username': email.split('@')[0],
+            'message': '登入成功！'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Google Sign-In verify error: {e}")
+        return jsonify({'message': f'Google 登入失敗：{str(e)}'}), 400
 
 # --- Google Calendar Routes ---
 @app.route('/api/auth/google/url', methods=['GET'])

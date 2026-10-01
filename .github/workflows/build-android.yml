@@ -64,6 +64,12 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleDebug
 
+      - name: Print Debug Keystore SHA-1 (for Google Cloud Console)
+        run: |
+          echo "====== DEBUG KEYSTORE SHA-1 (Copy this to Google Cloud Console) ======"
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep "SHA1:"
+          echo "======================================================================"
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:

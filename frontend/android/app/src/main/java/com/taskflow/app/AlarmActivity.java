@@ -110,7 +110,10 @@ public class AlarmActivity extends Activity {
         };
 
         // ─── Sound & vibration ────────────────────────────────────────────
-        boolean isSilent = (audioManager != null && audioManager.getRingerMode() != AudioManager.RINGER_MODE_NORMAL);
+        // 注意：STREAM_ALARM 跟 RINGER_MODE 是獨立的。就算手機靜音/震動模式，
+        // 鬧鐘音量仍可獨立設定，所以要用 getStreamVolume(STREAM_ALARM) 判斷。
+        int alarmVolume = (audioManager != null) ? audioManager.getStreamVolume(AudioManager.STREAM_ALARM) : 1;
+        boolean isSilent = (alarmVolume <= 0);
 
         if (!isSilent) {
             try {
@@ -137,19 +140,31 @@ public class AlarmActivity extends Activity {
                 // Request Exclusive Audio Focus before playing
                 requestExclusiveAudioFocus();
 
+                // 確保鬧鐘音量最大
+                if (audioManager != null) {
+                    int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+                    audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0);
+                }
+
                 mediaPlayer.start();
             } catch (Exception e) {
                 e.printStackTrace();
+                // 播放失敗時也要震動，不能什麼都沒有
+                startVibration();
             }
         } else {
-            long[] pattern = {0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400};
-            vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-            if (vibrator != null && vibrator.hasVibrator()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
-                } else {
-                    vibrator.vibrate(pattern, 0);
-                }
+            startVibration();
+        }
+    }
+
+    private void startVibration() {
+        long[] pattern = {0, 800, 400, 800, 400, 800, 400, 800, 400, 800, 400};
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+            } else {
+                vibrator.vibrate(pattern, 0);
             }
         }
     }

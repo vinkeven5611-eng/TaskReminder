@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authAPI, statsAPI } from '../services/api';
+import { authAPI, statsAPI, googleSignInAPI } from '../services/api';
 import { Mail, Lock, KeyRound, AlertCircle, ArrowRight, UserPlus, LogIn, Users, Eye, EyeOff } from 'lucide-react';
 
 export default function Auth({ setAuth }) {
@@ -11,6 +11,7 @@ export default function Auth({ setAuth }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [stats, setStats] = useState({ daily: 0, total: 0 });
@@ -31,6 +32,56 @@ export default function Auth({ setAuth }) {
       .then(data => setStats({ daily: data.daily_users, total: data.total_users }))
       .catch(err => console.log('Stats Error:', err));
   }, []);
+
+  // 處理 Google Sign-In 網頁版 OAuth callback（URL 帶有 ?code=...&state=signin）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    if (code && state === 'signin') {
+      // 清除 URL 參數
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setGoogleLoading(true);
+      const redirectUri = window.location.origin;
+      googleSignInAPI.verify({ code, redirectUri })
+        .then(data => {
+          localStorage.setItem('taskflow_token', data.token);
+          localStorage.setItem('taskflow_username', data.username);
+          setAuth(true);
+        })
+        .catch(err => {
+          setError('Google 登入失敗：' + (err.message || '請稍後重試'));
+        })
+        .finally(() => setGoogleLoading(false));
+    }
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const isNative = !!(window.Capacitor?.isNativePlatform?.());
+      if (isNative && window.Capacitor?.Plugins?.GoogleSignInPlugin) {
+        // Android 原生：呼叫 Java plugin 彈出帳號選擇器
+        const result = await window.Capacitor.Plugins.GoogleSignInPlugin.signIn();
+        const data = await googleSignInAPI.verify({ idToken: result.idToken });
+        localStorage.setItem('taskflow_token', data.token);
+        localStorage.setItem('taskflow_username', data.username);
+        setAuth(true);
+      } else {
+        // 網頁版：redirect 到 Google
+        const redirectUri = window.location.origin;
+        const { url } = await googleSignInAPI.getSignInUrl(redirectUri);
+        window.location.href = url;
+      }
+    } catch (err) {
+      if (err.message !== 'SESSION_EXPIRED') {
+        setError('Google 登入失敗：' + (err.message || '請稍後重試'));
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmitAuth = async (e) => {
     e.preventDefault();
@@ -214,6 +265,46 @@ export default function Auth({ setAuth }) {
                 {isLogin ? '立即註冊' : '登入現有帳號'}
               </span>
             </div>
+
+            {/* Google Sign-In Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0 1rem' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>或使用以下方式</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.6rem',
+                width: '100%',
+                background: '#fff',
+                color: '#3c4043',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid #dadce0',
+                fontWeight: '500',
+                fontSize: '0.95rem',
+                cursor: googleLoading ? 'not-allowed' : 'pointer',
+                opacity: googleLoading ? 0.7 : 1,
+                transition: 'box-shadow 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12)'}
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="G"
+                style={{ width: '20px', height: '20px' }}
+              />
+              {googleLoading ? '連線中...' : '使用 Google 帳號登入'}
+            </button>
             
             {!window.Capacitor && (
               <div style={{ marginTop: '2rem', textAlign: 'center' }}>

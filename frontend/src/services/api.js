@@ -117,6 +117,30 @@ export const statsAPI = {
   }
 };
 
+export const googleSignInAPI = {
+  // 網頁版：取得 Google 登入 OAuth URL（redirect 回首頁）
+  getSignInUrl: async (redirectUri) => {
+    const res = await fetch(`${BASE_URL}/auth/google/signin-url?redirect_uri=${encodeURIComponent(redirectUri)}`);
+    if (!res.ok) throw new Error('Failed to get Google Sign-In URL');
+    return res.json();
+  },
+  // 共用：送 id_token（Android）或 code（網頁）給後端換 JWT
+  verify: async ({ idToken, code, redirectUri }) => {
+    const body = {};
+    if (idToken) body.id_token = idToken;
+    if (code) body.code = code;
+    if (redirectUri) body.redirect_uri = redirectUri;
+    const res = await fetch(`${BASE_URL}/auth/google/signin-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Google Sign-In failed');
+    return data;
+  }
+};
+
 export const googleAPI = {
   getAuthUrl: async (redirectUri) => {
     const res = await apiFetch(`${BASE_URL}/auth/google/url?redirect_uri=${encodeURIComponent(redirectUri)}`, { headers: getAuthHeaders() });

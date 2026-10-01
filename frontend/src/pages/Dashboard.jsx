@@ -25,7 +25,7 @@ export default function Dashboard({ setAuth }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   
-  const CURRENT_VERSION = "4.2"; // Audio Focus Notification Interruption Fix
+  const CURRENT_VERSION = "4.3"; // Sync with version.json
 
   useEffect(() => {
     // Request Notification Permission on mount
